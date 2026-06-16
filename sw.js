@@ -1,5 +1,5 @@
 // 1. Update this version number to clear the cache and force an update
-const CACHE_VERSION = 'v1.0.3'; 
+const CACHE_VERSION = 'v1.0.4'; 
 const CACHE_NAME = `todo-pwa-cache-${CACHE_VERSION}`;
 
 // 2. Define the core assets you want to cache for offline use
