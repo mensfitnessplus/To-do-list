@@ -1,0 +1,2337 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="beige">
+<head>
+<link rel="manifest" href="./manifest.json">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Premium Todo App</title>
+    <style>
+        :root {
+            --bg: #F5F0E6;
+            --card: #FFFDF8;
+            --accent: #C8A97E;
+            --accent-dark: #A8895E;
+            --text: #2D2D2D;
+            --text-muted: #7A756B;
+            --border: #E6DFD3;
+            --overlay: rgba(45, 45, 45, 0.4);
+            --accent-light: #F0EAE1;
+            --danger: #D9534F;
+            --success: #5CB85C;
+            --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --shadow: 0 4px 12px rgba(200, 169, 126, 0.15);
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        [data-theme="amoled"] {
+            --bg: #000000;
+            --card: #111111;
+            --accent: #D4B483;
+            --accent-dark: #F5DBB3;
+            --text: #FFFFFF;
+            --text-muted: #888888;
+            --border: #222222;
+            --overlay: rgba(0, 0, 0, 0.7);
+            --accent-light: #221F1A;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+        }
+
+        /* Soft Dark: An Obsidian Slate theme that is dark but much easier on the eyes than AMOLED black */
+        [data-theme="obsidian"] {
+            --bg: #1E1E1E;
+            --card: #252525;
+            --accent: #8A5CF5;
+            --accent-dark: #7142D6;
+            --text: #E3E3E3;
+            --text-muted: #9CA3AF;
+            --border: #333333;
+            --overlay: rgba(0, 0, 0, 0.6);
+            --accent-light: #2D243F;
+            --shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Soft Light: A cool-toned, crisp alternative to the warm beige */
+        [data-theme="cloud"] {
+            --bg: #F3F4F6;
+            --card: #FFFFFF;
+            --accent: #4F46E5;
+            --accent-dark: #4338CA;
+            --text: #1F2937;
+            --text-muted: #6B7280;
+            --border: #E5E7EB;
+            --overlay: rgba(31, 41, 55, 0.3);
+            --accent-light: #E0E7FF;
+            --shadow: 0 4px 12px rgba(79, 70, 229, 0.1);
+        }
+
+        /* Mid-Tone: A warm, muted sepia that sits perfectly halfway between light and dark */
+        [data-theme="sepia"] {
+            --bg: #EAE6D9;
+            --card: #F4F1E8;
+            --accent: #D97A62;
+            --accent-dark: #BF654E;
+            --text: #4A443A;
+            --text-muted: #8A8171;
+            --border: #D6D1C1;
+            --overlay: rgba(74, 68, 58, 0.4);
+            --accent-light: #F2E3DF;
+            --shadow: 0 4px 12px rgba(217, 122, 98, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            transition: var(--transition);
+            padding-bottom: 100px;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 16px;
+            min-height: 100vh;
+        }
+
+        /* Header Navigation */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0 24px 0;
+        }
+
+        .header-title h1 {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .icon-btn {
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--text);
+            width: 44px;
+            height: 44px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .icon-btn:active {
+            transform: scale(0.95);
+        }
+
+        .icon-btn svg {
+            width: 22px;
+            height: 22px;
+            fill: currentColor;
+        }
+
+        /* Date Navigation Bar */
+        .date-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 8px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .date-nav-btn {
+            background: transparent;
+            border: none;
+            color: var(--text);
+            padding: 8px 16px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: var(--radius-sm);
+            transition: var(--transition);
+        }
+
+        .date-nav-btn:active {
+            background: var(--accent-light);
+        }
+
+        .current-date-display {
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--text);
+            text-align: center;
+        }
+
+        /* Dashboard Metrics */
+        .dashboard-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow);
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            text-align: center;
+        }
+
+        .metric-item .label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-item .value {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        #dashboard-card-wrap {
+            cursor: pointer;
+            position: relative;
+            user-select: none;
+            transition: var(--transition);
+        }
+        
+        #dashboard-card-wrap:active {
+            transform: scale(0.98);
+        }
+
+        .dashboard-toggle-icon {
+            position: absolute;
+            top: 14px;
+            right: 16px;
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+
+        .dashboard-compact {
+            display: none;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .dashboard-compact.active {
+            display: block;
+        }
+
+        /* Estimation & Workload Card */
+        .estimation-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .estimation-time {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .workload-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .workload-badge {
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #FFF;
+            font-weight: 700;
+        }
+
+        /* Progress Bar Card */
+        .progress-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .progress-track {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: var(--accent);
+            height: 100%;
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+
+        /* Quick Add Input */
+        .quick-add-container {
+            margin-bottom: 24px;
+        }
+
+        .quick-add-input {
+            width: 100%;
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 14px 16px;
+            border-radius: var(--radius-md);
+            font-size: 15px;
+            outline: none;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .quick-add-input:focus {
+            border-color: var(--accent);
+        }
+
+        /* Sections Headers */
+        .section-title {
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .collapsible-trigger {
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .collapsible-trigger svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+            transition: transform 0.2s;
+        }
+
+        .collapsible-trigger.collapsed svg {
+            transform: rotate(-90deg);
+        }
+
+        /* Lists Containers */
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 24px;
+            min-height: 10px;
+        }
+
+        .task-list.collapsed {
+            display: none;
+        }
+
+        /* Task Card Styling */
+        .task-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: var(--shadow);
+            position: relative;
+            transition: transform 0.15s, opacity 0.15s;
+        }
+
+        .task-card.dragging {
+            opacity: 0.5;
+            transform: scale(0.98);
+            border: 2px dashed var(--accent);
+        }
+
+        .drag-handle {
+            cursor: grab;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            padding: 4px;
+            touch-action: none;
+        }
+
+        .drag-handle svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
+        .checkbox-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            cursor: pointer;
+        }
+
+        .checkbox-container input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+
+        .checkmark {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 22px;
+            width: 22px;
+            background-color: transparent;
+            border: 2px solid var(--accent);
+            border-radius: 6px;
+            transition: var(--transition);
+        }
+
+        .checkbox-container input:checked ~ .checkmark {
+            background-color: var(--accent);
+        }
+
+        .checkmark:after {
+            content: "";
+            position: absolute;
+            display: none;
+            left: 7px;
+            top: 3px;
+            width: 5px;
+            height: 10px;
+            border: solid var(--card);
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        .checkbox-container input:checked ~ .checkmark:after {
+            display: block;
+        }
+
+        .task-info {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            overflow: hidden;
+        }
+
+        .task-title {
+            font-size: 15px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .task-card.completed-task .task-title {
+            text-decoration: line-through;
+            color: var(--text-muted);
+        }
+
+        .task-duration {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .overdue-tag {
+            color: var(--danger);
+            font-weight: 700;
+            font-size: 11px;
+            margin-right: 4px;
+        }
+
+        .task-actions-wrapper {
+            display: flex;
+            gap: 4px;
+        }
+
+        .task-action-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .task-action-btn:active {
+            background: var(--accent-light);
+            color: var(--text);
+        }
+
+        .task-action-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
+        /* Action Dropdown Menu */
+        .menu-dropdown {
+            position: absolute;
+            right: 14px;
+            top: 50px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow);
+            z-index: 50;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            width: 120px;
+        }
+
+        .menu-dropdown.active {
+            display: flex;
+        }
+
+        .menu-item {
+            padding: 10px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: left;
+            background: transparent;
+            border: none;
+            color: var(--text);
+            transition: var(--transition);
+        }
+
+        .menu-item:active {
+            background: var(--accent-light);
+        }
+
+        .menu-item.delete-item {
+            color: var(--danger);
+        }
+
+        /* Floating Action Button (FAB) */
+        .fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            background-color: var(--accent);
+            color: #FFF;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+            cursor: pointer;
+            border: none;
+            z-index: 90;
+            transition: var(--transition);
+        }
+
+        .fab:active {
+            transform: scale(0.92);
+            background-color: var(--accent-dark);
+        }
+
+        .fab svg {
+            width: 24px;
+            height: 24px;
+            fill: currentColor;
+        }
+
+        /* Modals & Fullscreens Overlays */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--overlay);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            z-index: 100;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 440px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+            position: relative;
+            animation: modalSlide 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes modalSlide {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        /* Form Controls */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .form-input {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 12px;
+            border-radius: var(--radius-sm);
+            font-size: 15px;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--accent);
+        }
+
+        .duration-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            transition: var(--transition);
+        }
+
+        .btn-text {
+            background: transparent;
+            color: var(--text-muted);
+        }
+
+        .btn-text:active {
+            background: var(--accent-light);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #FFF;
+        }
+
+        .btn-primary:active {
+            background: var(--accent-dark);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: #FFF;
+        }
+
+        /* Screen/Panels Overlay Architecture (Calendar and Settings) */
+        .screen-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg);
+            z-index: 80;
+            display: none;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .screen-overlay.active {
+            display: flex;
+        }
+
+        .screen-header {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            background: var(--card);
+        }
+
+        .screen-title {
+            flex-grow: 1;
+            text-align: center;
+            font-size: 18px;
+            font-weight: 700;
+            margin-right: 44px; /* balance the back button alignment */
+        }
+
+        /* Monthly Calendar Specifics */
+        .calendar-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            padding: 0 16px 16px 16px;
+        }
+
+        .calendar-day-label {
+            text-align: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
+            padding: 8px 0;
+        }
+
+        .calendar-cell {
+            background: var(--card);
+            border: 1px solid var(--border);
+            aspect-ratio: 1;
+            border-radius: var(--radius-sm);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .calendar-cell.empty {
+            background: transparent;
+            border: none;
+            cursor: default;
+        }
+
+        .calendar-cell.today {
+            border: 2px solid var(--text);
+        }
+
+        .calendar-cell.selected {
+            background: var(--accent);
+            color: #FFF;
+            border-color: var(--accent);
+        }
+
+        .calendar-dots {
+            display: flex;
+            gap: 2px;
+            position: absolute;
+            bottom: 4px;
+            justify-content: center;
+            width: 100%;
+            height: 4px;
+        }
+
+        .calendar-dot {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: var(--text-muted);
+        }
+
+        .calendar-cell.selected .calendar-dot {
+            background: #FFF;
+        }
+
+        /* Settings Screen Design */
+        .settings-list {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .settings-group {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            box-shadow: var(--shadow);
+        }
+
+        .settings-group-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .theme-selectors {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+        }
+
+        .theme-btn {
+            padding: 16px;
+            border-radius: var(--radius-md);
+            border: 2px solid var(--border);
+            background: transparent;
+            color: var(--text);
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 14px;
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .theme-btn.active {
+            border-color: var(--accent);
+            background: var(--accent-light);
+        }
+
+        .settings-action-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .settings-action-row:last-child {
+            border-bottom: none;
+        }
+
+        .settings-action-label {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .settings-action-subtext {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            font-size: 100px;
+            cursor: pointer;
+        }
+
+        .about-box p {
+            font-size: 14px;
+            line-height: 1.5;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .about-box p:last-child {
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="main-view">
+        <header>
+            <div class="header-title">
+                <h1 id="app-title-date">Todo List</h1>
+            </div>
+            <div class="header-actions">
+                <button class="icon-btn" id="open-calendar-btn" title="Calendar">
+                    <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+                </button>
+                <button class="icon-btn" id="open-settings-btn" title="Settings">
+                    <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+                </button>
+            </div>
+        </header>
+
+        <div class="date-nav">
+            <button class="date-nav-btn" id="prev-day-btn">← Prev</button>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                <div class="current-date-display" id="date-display-label">Today</div>
+                <button class="date-nav-btn" id="go-today-btn" style="font-size: 11px; padding: 2px 10px; color: var(--accent); font-weight: 700; display: none;">Today</button>
+            </div>
+            <button class="date-nav-btn" id="next-day-btn">Next →</button>
+        </div>
+
+        <div class="dashboard-card" id="dashboard-card-wrap">
+            <div class="dashboard-toggle-icon" id="dashboard-toggle-icon">▼</div>
+            <div class="metrics-grid" id="dashboard-metrics-grid">
+                <div class="metric-item">
+                    <div class="label">Scheduled</div>
+                    <div class="value" id="dash-scheduled">0h 0m</div>
+                </div>
+                <div class="metric-item">
+                    <div class="label">Completed</div>
+                    <div class="value" id="dash-completed">0h 0m</div>
+                </div>
+                <div class="metric-item">
+                    <div class="label">Remaining</div>
+                    <div class="value" id="dash-remaining">0h 0m</div>
+                </div>
+            </div>
+            <div class="dashboard-compact" id="dashboard-compact-summary"></div>
+        </div>
+
+        <div class="estimation-card" id="planning-card-wrap" style="margin-bottom: 12px; gap: 12px;">
+            <div style="font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">
+                Day Starts At: <span id="planning-mode-display" style="color: var(--text); font-weight: 700; margin-left: 4px;">Now</span>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <input type="time" id="planning-time-picker" class="form-input" style="padding: 8px 12px; width: auto; font-size: 14px; font-weight: 600;">
+                <button type="button" class="btn btn-text" id="planning-now-btn" style="background: var(--border); color: var(--text); padding: 8px 14px; font-size: 13px;">Use Current Time</button>
+            </div>
+        </div>
+
+        <div class="estimation-card" id="estimation-card-wrap">
+            <div class="estimation-time" id="estimation-time-output">
+                🕒 Finish By: No remaining work
+            </div>
+            <div class="workload-indicator" id="workload-output">
+                Workload: <span class="workload-badge" style="background-color: var(--success)">Light</span>
+            </div>
+        </div>
+
+        <div class="progress-card" id="progress-card-wrap">
+            <div class="progress-header">
+                <span id="progress-text-ratio">0h 0m / 0h 0m</span>
+                <span id="progress-text-percent">0%</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill" id="progress-bar-fill"></div>
+            </div>
+        </div>
+
+        <div class="quick-add-container">
+            <input type="text" class="quick-add-input" id="quick-add-field" placeholder="Quick Add Task (e.g. Study Accounting 2h 30m)">
+        </div>
+
+        <div id="overdue-section-wrapper" style="display: none;">
+            <div class="section-title">
+                <span>Overdue Tasks (<span id="overdue-count">0</span>)</span>
+            </div>
+            <div class="task-list" id="overdue-tasks-container"></div>
+        </div>
+
+        <div class="section-title">
+            <span>Active Tasks</span>
+        </div>
+        <div class="task-list" id="active-tasks-container"></div>
+
+        <div class="section-title">
+            <div class="collapsible-trigger collapsed" id="completed-trigger">
+                <svg viewBox="0 0 24 24"><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>
+                <span>Completed Tasks (<span id="completed-count">0</span>)</span>
+            </div>
+        </div>
+        <div class="task-list collapsed" id="completed-tasks-container"></div>
+
+    </div>
+
+    <button class="fab" id="fab-add-task" title="Add Task">
+        <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+    </button>
+
+    <div class="modal-overlay" id="task-modal">
+        <div class="modal-card">
+            <div class="modal-title" id="modal-form-title">Create Task</div>
+            <form id="task-mutation-form">
+                <input type="hidden" id="form-task-id">
+                <div class="form-group">
+                    <label for="form-task-text">Task Title *</label>
+                    <input type="text" id="form-task-text" class="form-input" required placeholder="e.g. Review Economics notes">
+                </div>
+                <div class="form-group">
+                    <label>Duration</label>
+                    <div class="duration-inputs">
+                        <div>
+                            <label for="form-task-hours" style="font-size: 11px;">Hours</label>
+                            <input type="number" id="form-task-hours" class="form-input" min="0" value="0">
+                        </div>
+                        <div>
+                            <label for="form-task-minutes" style="font-size: 11px;">Minutes</label>
+                            <input type="number" id="form-task-minutes" class="form-input" min="0" max="59" value="0">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="form-task-date">Scheduled Date</label>
+                    <input type="date" id="form-task-date" class="form-input" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-text" id="form-cancel-btn">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="form-save-btn">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="migration-modal">
+        <div class="modal-card">
+            <div class="modal-title">Unfinished Overdue Tasks</div>
+            <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5;">
+                You have unfinished tasks from previous days. How would you like to handle them for your workspace schedule?
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button class="btn btn-primary" id="migrate-move-btn" style="text-align: left;">Move All To Today</button>
+                <button class="btn btn-text" id="migrate-keep-btn" style="text-align: left; background: var(--border); color: var(--text)">Keep On Original Dates</button>
+                <button class="btn btn-danger" id="migrate-complete-btn" style="text-align: left;">Mark All Completed</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="screen-overlay" id="calendar-screen">
+        <div class="screen-header">
+            <button class="icon-btn" id="close-calendar-btn">
+                <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+            </button>
+            <div class="screen-title">Calendar Grid</div>
+        </div>
+        <div class="calendar-nav">
+            <button class="date-nav-btn" id="cal-prev-month">← Prev</button>
+            <div class="current-date-display" id="cal-month-year-label">June 2026</div>
+            <button class="date-nav-btn" id="cal-next-month">Next →</button>
+        </div>
+        <div class="calendar-grid" id="calendar-days-container"></div>
+    </div>
+
+    <div class="screen-overlay" id="settings-screen">
+        <div class="screen-header">
+            <button class="icon-btn" id="close-settings-btn">
+                <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+            </button>
+            <div class="screen-title">Settings & Tools</div>
+        </div>
+        
+        <div class="settings-list">
+            <div class="settings-group">
+                <div class="settings-group-title">Theme Interface Selection</div>
+                <div class="theme-selectors">
+                    <button class="theme-btn" id="theme-btn-beige" onclick="Actions.switchTheme('beige')">Beige Light</button>
+                    <button class="theme-btn" id="theme-btn-cloud" onclick="Actions.switchTheme('cloud')">Cool Cloud</button>
+                    <button class="theme-btn" id="theme-btn-sepia" onclick="Actions.switchTheme('sepia')">Warm Sepia</button>
+                    <button class="theme-btn" id="theme-btn-obsidian" onclick="Actions.switchTheme('obsidian')">Obsidian Slate</button>
+                    <button class="theme-btn" id="theme-btn-amoled" onclick="Actions.switchTheme('amoled')">AMOLED Dark</button>
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <div class="settings-group-title">Backup & Data Migration</div>
+                
+                <div class="settings-action-row">
+                    <div>
+                        <div class="settings-action-label">Export Application State</div>
+                        <div class="settings-action-subtext">Download all tasks and profile configurations.</div>
+                    </div>
+                    <button class="btn btn-primary" onclick="Actions.exportData()">Export</button>
+                </div>
+
+                <div class="settings-action-row">
+                    <div>
+                        <div class="settings-action-label">Import File Backup</div>
+                        <div class="settings-action-subtext">Upload structural system data state matrix JSON.</div>
+                    </div>
+                    <div class="file-input-wrapper">
+                        <button class="btn btn-primary">Import</button>
+                        <input type="file" id="import-file-engine" accept=".json" onchange="Actions.importData(event)">
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <div class="settings-group-title">System Resets</div>
+                <div class="settings-action-row">
+                    <div>
+                        <div class="settings-action-label" style="color: var(--danger)">Reset System Registry</div>
+                        <div class="settings-action-subtext">Wipe localStorage and return variables to production standards.</div>
+                    </div>
+                    <button class="btn btn-danger" onclick="Actions.resetData()">Reset All</button>
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <div class="settings-group-title">About Workspace</div>
+                <div class="about-box">
+                    <p><strong>Premium Productivity Scheduler</strong></p>
+                    <p>Designed for responsive, millisecond-fast local caching layout control vectors. Powered by modern web execution loops.</p>
+                    <p>© 2026 Architecture. Fully Offline Capable.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Reactive Application State Engine
+        const State = {
+            tasks: [],
+            selectedDate: "", // YYYY-MM-DD format
+            theme: "beige",
+            migrationDecisions: {}, // tracks user choice per calendar date
+            calendarYear: 2026,
+            calendarMonth: 5, // June (0-indexed base)
+            planningStartTime: null, // null means "Now" mode, otherwise "HH:MM"
+            dashboardCollapsed: false, // New focus mode state
+            
+            save() {
+                localStorage.setItem("todo_app_tasks", JSON.stringify(this.tasks));
+                localStorage.setItem("todo_app_theme", this.theme);
+                localStorage.setItem("todo_app_selectedDate", this.selectedDate);
+                localStorage.setItem("todo_app_migrationDecisions", JSON.stringify(this.migrationDecisions));
+                localStorage.setItem("todo_app_planningTime", this.planningStartTime || "");
+                localStorage.setItem("todo_app_dashboardCollapsed", this.dashboardCollapsed);
+            },
+            
+            load() {
+                const cachedTasks = localStorage.getItem("todo_app_tasks");
+                if(cachedTasks) this.tasks = JSON.parse(cachedTasks);
+
+                const cachedTheme = localStorage.getItem("todo_app_theme");
+                if(cachedTheme) this.theme = cachedTheme;
+
+                const cachedDate = localStorage.getItem("todo_app_selectedDate");
+                if(cachedDate) {
+                    this.selectedDate = cachedDate;
+                } else {
+                    this.selectedDate = Utils.getTodayString();
+                }
+
+                const cachedMigrate = localStorage.getItem("todo_app_migrationDecisions");
+                if(cachedMigrate) this.migrationDecisions = JSON.parse(cachedMigrate);
+
+                const cachedPlanTime = localStorage.getItem("todo_app_planningTime");
+                this.planningStartTime = cachedPlanTime ? cachedPlanTime : null;
+
+                this.dashboardCollapsed = localStorage.getItem("todo_app_dashboardCollapsed") === "true";
+
+                // Sync UI runtime state variables to internal calendar viewport settings values
+                const parts = this.selectedDate.split("-");
+                this.calendarYear = parseInt(parts[0], 10);
+                this.calendarMonth = parseInt(parts[1], 10) - 1;
+            }
+        };
+
+        // Utility Math & Functional String Parsing Operations Matrix
+        const Utils = {
+            getTodayString() {
+                const d = new Date();
+                return this.formatDateIso(d);
+            },
+            formatDateIso(dateObj) {
+                const y = dateObj.getFullYear();
+                let m = "" + (dateObj.getMonth() + 1);
+                let d = "" + dateObj.getDate();
+                if(m.length < 2) m = "0" + m;
+                if(d.length < 2) d = "0" + d;
+                return `${y}-${m}-${d}`;
+            },
+            generateUUID() {
+                return 'id-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now().toString(36);
+            },
+            formatHoursMins(totalMins) {
+                const hrs = Math.floor(totalMins / 60);
+                const mins = totalMins % 60;
+                return `${hrs}h ${mins}m`;
+            },
+            parseQuickAdd(inputStr) {
+                let text = inputStr.trim();
+                let hours = 0;
+                let minutes = 0;
+
+                // Support both "2h 30m" and combined "2h30m"
+                const combinedRegex = /(\d+)\s*h\s*(\d+)\s*m/i;
+                const hourRegex = /(\d+)\s*h/i;
+                const minRegex = /(\d+)\s*m/i;
+
+                const combinedMatch = text.match(combinedRegex);
+                if(combinedMatch) {
+                    hours = parseInt(combinedMatch[1], 10);
+                    minutes = parseInt(combinedMatch[2], 10);
+                    text = text.replace(combinedRegex, "");
+                } else {
+                    const hMatch = text.match(hourRegex);
+                    if(hMatch) {
+                        hours = parseInt(hMatch[1], 10);
+                        text = text.replace(hourRegex, "");
+                    }
+                    const mMatch = text.match(minRegex);
+                    if(mMatch) {
+                        minutes = parseInt(mMatch[1], 10);
+                        text = text.replace(minRegex, "");
+                    }
+                }
+
+                text = text.replace(/\s+/g, " ").trim();
+                if(!text) text = "Quick Added Task";
+
+                return { text, hours, minutes };
+            },
+            getFinishTimeEstimationStr(remainingMinutes) {
+                if (remainingMinutes <= 0) return "🕒 Finish By: No remaining work";
+                
+                let baseDate;
+                const todayStr = this.getTodayString();
+                const dateParts = State.selectedDate.split("-");
+                
+                if (State.planningStartTime) {
+                    // Mode 2: Fixed Time (Anchors to globally saved start time on the targeted date)
+                    const timeParts = State.planningStartTime.split(":");
+                    baseDate = new Date(
+                        parseInt(dateParts[0], 10),
+                        parseInt(dateParts[1], 10) - 1,
+                        parseInt(dateParts[2], 10),
+                        parseInt(timeParts[0], 10),
+                        parseInt(timeParts[1], 10),
+                        0, 0
+                    );
+                } else {
+                    // Mode 1: Now
+                    if (State.selectedDate === todayStr) {
+                        baseDate = new Date();
+                    } else {
+                        // For future dates in "Now" mode, defaults calculation start anchor to current device clock hour/min
+                        const now = new Date();
+                        baseDate = new Date(
+                            parseInt(dateParts[0], 10),
+                            parseInt(dateParts[1], 10) - 1,
+                            parseInt(dateParts[2], 10),
+                            now.getHours(),
+                            now.getMinutes(),
+                            0, 0
+                        );
+                    }
+                }
+
+                const targetTime = new Date(baseDate.getTime() + remainingMinutes * 60000);
+                
+                let hours = targetTime.getHours();
+                const minutes = targetTime.getMinutes();
+                const ampm = hours >= 12 ? 'PM' : 'AM';
+                hours = hours % 12;
+                hours = hours ? hours : 12; 
+                const minStr = minutes < 10 ? '0' + minutes : minutes;
+                const timeStr = `${hours}:${minStr} ${ampm}`;
+
+                const targetDateStr = this.formatDateIso(targetTime);
+
+                // If viewing today's workspace panel
+                if (State.selectedDate === todayStr) {
+                    const tomorrow = new Date(baseDate);
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    const tomorrowStr = this.formatDateIso(tomorrow);
+
+                    if (targetDateStr === todayStr) {
+                        return `🕒 Finish By: Today ${timeStr}`;
+                    } else if (targetDateStr === tomorrowStr) {
+                        return `🕒 Finish By: Tomorrow ${timeStr}`;
+                    }
+                } 
+
+                // Viewing future or crossing midnight from a future day - Output pure calendar dates like "25 Jun, 12:00 PM"
+                const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                const smartDateOutput = `${targetTime.getDate()} ${monthNames[targetTime.getMonth()]}`;
+                return `🕒 Finish By: ${smartDateOutput}, ${timeStr}`;
+            },
+            getFriendlyDateLabel(isoString) {
+                if(isoString === this.getTodayString()) return "Today";
+                const parts = isoString.split("-");
+                const d = new Date(parts[0], parts[1] - 1, parts[2]);
+                const options = { day: 'numeric', month: 'short', year: 'numeric' };
+                return d.toLocaleDateString('en-US', options);
+            }
+        };
+
+        // Actions, Modifiers, Controllers Interface Module Blueprint
+        const Actions = {
+            toggleDashboardFocus() {
+                State.dashboardCollapsed = !State.dashboardCollapsed;
+                State.save();
+                RenderEngine.fullRender();
+            },
+            
+            switchTheme(themeName) {
+                State.theme = themeName;
+                document.documentElement.setAttribute("data-theme", themeName);
+                
+                // Clear the active state from all theme buttons
+                document.querySelectorAll('.theme-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                
+                // Apply the active state to the newly selected button
+                const targetBtn = document.getElementById(`theme-btn-${themeName}`);
+                if (targetBtn) {
+                    targetBtn.classList.add('active');
+                }
+                
+                State.save();
+            },
+
+            changeDateDelta(daysDelta) {
+                const parts = State.selectedDate.split("-");
+                const current = new Date(parts[0], parts[1] - 1, parts[2]);
+                current.setDate(current.getDate() + daysDelta);
+                State.selectedDate = Utils.formatDateIso(current);
+                State.calendarYear = current.getFullYear();
+                State.calendarMonth = current.getMonth();
+                State.save();
+                RenderEngine.fullRender();
+            },
+
+            openTaskModal(taskId = null) {
+                const overlay = document.getElementById("task-modal");
+                const form = document.getElementById("task-mutation-form");
+                form.reset();
+                
+                if(taskId) {
+                    document.getElementById("modal-form-title").innerText = "Edit Task";
+                    const task = State.tasks.find(t => t.id === taskId);
+                    if(task) {
+                        document.getElementById("form-task-id").value = task.id;
+                        document.getElementById("form-task-text").value = task.text;
+                        document.getElementById("form-task-hours").value = task.hours;
+                        document.getElementById("form-task-minutes").value = task.minutes;
+                        document.getElementById("form-task-date").value = task.date;
+                    }
+                } else {
+                    document.getElementById("modal-form-title").innerText = "Create Task";
+                    document.getElementById("form-task-id").value = "";
+                    document.getElementById("form-task-date").value = State.selectedDate;
+                }
+                overlay.classList.add("active");
+            },
+
+            closeTaskModal() {
+                document.getElementById("task-modal").classList.remove("active");
+            },
+
+            submitTaskForm(e) {
+                e.preventDefault();
+                const id = document.getElementById("form-task-id").value;
+                const text = document.getElementById("form-task-text").value.trim();
+                const hours = Math.max(0, parseInt(document.getElementById("form-task-hours").value, 10) || 0);
+                const minutes = Math.max(0, parseInt(document.getElementById("form-task-minutes").value, 10) || 0);
+                const date = document.getElementById("form-task-date").value;
+
+                if(!text) return;
+
+                if(id) {
+                    // Mutation Update Mode
+                    const task = State.tasks.find(t => t.id === id);
+                    if(task) {
+                        task.text = text;
+                        task.hours = hours;
+                        task.minutes = minutes;
+                        task.date = date;
+                    }
+                } else {
+                    // Assignment Mode Creation
+                    const targetDateTasks = State.tasks.filter(t => t.date === date);
+                    const orderIndex = targetDateTasks.length;
+                    const newTask = {
+                        id: Utils.generateUUID(),
+                        text: text,
+                        date: date,
+                        hours: hours,
+                        minutes: minutes,
+                        completed: false,
+                        createdAt: Date.now(),
+                        order: orderIndex
+                    };
+                    State.tasks.push(newTask);
+                }
+
+                State.save();
+                Actions.closeTaskModal();
+                RenderEngine.fullRender();
+            },
+
+            toggleTaskCompletion(taskId) {
+                const task = State.tasks.find(t => t.id === taskId);
+                if(task) {
+                    task.completed = !task.completed;
+                    State.save();
+                    RenderEngine.fullRender();
+                }
+            },
+
+            toggleDropdown(taskId, event) {
+                event.stopPropagation();
+                const menus = document.querySelectorAll(".menu-dropdown");
+                menus.forEach(m => {
+                    if(m.id !== `dropdown-${taskId}`) m.classList.remove("active");
+                });
+                const targetsMenu = document.getElementById(`dropdown-${taskId}`);
+                if(targetsMenu) targetsMenu.classList.toggle("active");
+            },
+
+            duplicateTask(taskId) {
+                const source = State.tasks.find(t => t.id === taskId);
+                if(!source) return;
+
+                const activeDayTasks = State.tasks.filter(t => t.date === source.date);
+                activeDayTasks.sort((a,b) => a.order - b.order);
+
+                const sourceIndex = activeDayTasks.findIndex(t => t.id === taskId);
+
+                const clone = {
+                    ...source,
+                    id: Utils.generateUUID(),
+                    text: `${source.text} (Copy)`,
+                    createdAt: Date.now(),
+                    completed: false
+                };
+
+                // Inject clone immediately behind the array stack coordinates
+                State.tasks.push(clone);
+                
+                // Readjust order elements indices safely
+                let indexCounter = 0;
+                activeDayTasks.forEach((t, idx) => {
+                    t.order = indexCounter++;
+                    if(idx === sourceIndex) {
+                        clone.order = indexCounter++;
+                    }
+                });
+
+                State.save();
+                RenderEngine.fullRender();
+            },
+
+            deleteTask(taskId) {
+                if(confirm("Are you sure you want to permanently delete this task?")) {
+                    State.tasks = State.tasks.filter(t => t.id !== taskId);
+                    State.save();
+                    RenderEngine.fullRender();
+                }
+            },
+
+            handleQuickAdd(e) {
+                if(e.key === "Enter") {
+                    const inputField = document.getElementById("quick-add-field");
+                    const rawVal = inputField.value.trim();
+                    if(!rawVal) return;
+
+                    const parsed = Utils.parseQuickAdd(rawVal);
+                    const targetTasks = State.tasks.filter(t => t.date === State.selectedDate);
+                    
+                    const newTask = {
+                        id: Utils.generateUUID(),
+                        text: parsed.text,
+                        date: State.selectedDate,
+                        hours: parsed.hours,
+                        minutes: parsed.minutes,
+                        completed: false,
+                        createdAt: Date.now(),
+                        order: targetTasks.length
+                    };
+
+                    State.tasks.push(newTask);
+                    State.save();
+                    inputField.value = "";
+                    RenderEngine.fullRender();
+                }
+            },
+
+            checkMigrationRoutine() {
+                const todayStr = Utils.getTodayString();
+                if(State.migrationDecisions[todayStr]) return; // Execution check verified already
+
+                const overdueExist = State.tasks.some(t => !t.completed && t.date < todayStr);
+                if(overdueExist) {
+                    document.getElementById("migration-modal").classList.add("active");
+                }
+            },
+
+            executeMigration(strategy) {
+                const todayStr = Utils.getTodayString();
+                const pastUnfinishedTasks = State.tasks.filter(t => !t.completed && t.date < todayStr);
+
+                if(strategy === "move") {
+                    const todayTasksCount = State.tasks.filter(t => t.date === todayStr).length;
+                    pastUnfinishedTasks.forEach((t, index) => {
+                        t.date = todayStr;
+                        t.order = todayTasksCount + index;
+                    });
+                } else if(strategy === "complete") {
+                    pastUnfinishedTasks.forEach(t => {
+                        t.completed = true;
+                    });
+                }
+                
+                State.migrationDecisions[todayStr] = strategy;
+                State.save();
+                document.getElementById("migration-modal").classList.remove("active");
+                RenderEngine.fullRender();
+            },
+
+            exportData() {
+                const bundle = {
+                    tasks: State.tasks,
+                    theme: State.theme,
+                    migrationDecisions: State.migrationDecisions,
+                    selectedDate: State.selectedDate
+                };
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(bundle));
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", "todo-backup.json");
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+            },
+
+            importData(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const parsed = JSON.parse(e.target.result);
+                        if(parsed && Array.isArray(parsed.tasks)) {
+                            State.tasks = parsed.tasks;
+                            if(parsed.theme) State.theme = parsed.theme;
+                            if(parsed.migrationDecisions) State.migrationDecisions = parsed.migrationDecisions;
+                            if(parsed.selectedDate) State.selectedDate = parsed.selectedDate;
+                            
+                            State.save();
+                            alert("Data successfully restored from backup.");
+                            window.location.reload();
+                        } else {
+                            alert("Invalid backup schema structure detected.");
+                        }
+                    } catch(err) {
+                        alert("Failed to parse the data file matrix.");
+                    }
+                };
+                reader.readAsText(file);
+            },
+
+            resetData() {
+                if(confirm("DANGER: This action wipes all locally compiled tasks and configurations permanently. Proceed?")) {
+                    localStorage.clear();
+                    window.location.reload();
+                }
+            }
+        };
+
+        // Render Engine Dom Manipulations Matrix Layer
+        const RenderEngine = {
+            fullRender() {
+                this.renderMetadataHeaders();
+                this.renderDashboardMetrics();
+                this.renderTaskListsEngine();
+                this.renderCalendarEngine();
+            },
+
+            renderMetadataHeaders() {
+                document.getElementById("app-title-date").innerText = `Scheduler`;
+                document.getElementById("date-display-label").innerText = Utils.getFriendlyDateLabel(State.selectedDate);
+                const todayBtn = document.getElementById("go-today-btn");
+                if (todayBtn) todayBtn.style.display = (State.selectedDate !== Utils.getTodayString()) ? "block" : "none";
+            },
+
+            renderDashboardMetrics() {
+                const targetDateTasks = State.tasks.filter(t => t.date === State.selectedDate);
+                
+                let scheduledMins = 0;
+                let completedMins = 0;
+
+                targetDateTasks.forEach(t => {
+                    const duration = (t.hours * 60) + t.minutes;
+                    scheduledMins += duration;
+                    if(t.completed) completedMins += duration;
+                });
+
+                const remainingMins = scheduledMins - completedMins;
+
+                document.getElementById("dash-scheduled").innerText = Utils.formatHoursMins(scheduledMins);
+                document.getElementById("dash-completed").innerText = Utils.formatHoursMins(completedMins);
+                document.getElementById("dash-remaining").innerText = Utils.formatHoursMins(remainingMins);
+
+                // Sync values directly into the input nodes matrix variables
+                const modeLabel = document.getElementById("planning-mode-display");
+                const picker = document.getElementById("planning-time-picker");
+                if (State.planningStartTime) {
+                    picker.value = State.planningStartTime;
+                    let parts = State.planningStartTime.split(":");
+                    let hrs = parseInt(parts[0], 10);
+                    let mns = parts[1];
+                    let suffix = hrs >= 12 ? "PM" : "AM";
+                    hrs = hrs % 12 || 12;
+                    modeLabel.innerText = `${hrs}:${mns} ${suffix}`;
+                } else {
+                    picker.value = "";
+                    modeLabel.innerText = "Now";
+                }
+
+                // Estimation Processor Interface
+                document.getElementById("estimation-time-output").innerText = Utils.getFinishTimeEstimationStr(remainingMins);
+
+                // Workload Level Vector Logic Engine
+                const workloadOut = document.getElementById("workload-output");
+                const workHrs = remainingMins / 60;
+                let badgeLabel = "Light";
+                let badgeColor = "var(--success)";
+
+                if(workHrs > 2 && workHrs <= 5) {
+                    badgeLabel = "Moderate";
+                    badgeColor = "#FF9800";
+                } else if(workHrs > 5 && workHrs <= 8) {
+                    badgeLabel = "Heavy";
+                    badgeColor = "var(--danger)";
+                } else if(workHrs > 8) {
+                    badgeLabel = "Very Heavy";
+                    badgeColor = "#9C27B0";
+                }
+                workloadOut.innerHTML = `Workload Indicator: <span class="workload-badge" style="background-color: ${badgeColor}">${badgeLabel}</span>`;
+
+                // Progress Card Calculations Processing
+                const progressTextRatio = document.getElementById("progress-text-ratio");
+                const progressTextPercent = document.getElementById("progress-text-percent");
+                const progressBarFill = document.getElementById("progress-bar-fill");
+
+                progressTextRatio.innerText = `${Utils.formatHoursMins(completedMins)} / ${Utils.formatHoursMins(scheduledMins)}`;
+                
+                let percent = 0;
+                if(scheduledMins > 0) {
+                    percent = Math.round((completedMins / scheduledMins) * 100);
+                }
+                progressTextPercent.innerText = `${percent}%`;
+                progressBarFill.style.width = `${percent}%`;
+
+                // Process Dashboard Compact Mode
+                document.getElementById("dashboard-compact-summary").innerText = `Scheduled ${Utils.formatHoursMins(scheduledMins)} • Remaining ${Utils.formatHoursMins(remainingMins)}`;
+
+                const metricsGrid = document.getElementById("dashboard-metrics-grid");
+                const compactSummary = document.getElementById("dashboard-compact-summary");
+                const toggleIcon = document.getElementById("dashboard-toggle-icon");
+                
+                const planningCard = document.getElementById("planning-card-wrap");
+                const estimationCard = document.getElementById("estimation-card-wrap");
+                const progressCard = document.getElementById("progress-card-wrap");
+
+                if (State.dashboardCollapsed) {
+                    metricsGrid.style.display = "none";
+                    compactSummary.classList.add("active");
+                    toggleIcon.innerText = "▲";
+                    if (planningCard) planningCard.style.display = "none";
+                    if (estimationCard) estimationCard.style.display = "none";
+                    if (progressCard) progressCard.style.display = "none";
+                } else {
+                    metricsGrid.style.display = "grid";
+                    compactSummary.classList.remove("active");
+                    toggleIcon.innerText = "▼";
+                    if (planningCard) planningCard.style.display = "flex";
+                    if (estimationCard) estimationCard.style.display = "flex";
+                    if (progressCard) progressCard.style.display = "block";
+                }
+            },
+
+            buildTaskCardElement(task, isOverdueContext = false, deadlineStr = "") {
+                const card = document.createElement("div");
+                card.className = `task-card ${task.completed ? 'completed-task' : ''}`;
+                card.id = task.id;
+                card.setAttribute("data-order", task.order);
+
+                const totalMins = (task.hours * 60) + task.minutes;
+                const durationLabel = Utils.formatHoursMins(totalMins);
+                const deadlineHtml = deadlineStr ? `<span style="margin-left: 4px; font-weight: 700; color: var(--accent-dark);">(${deadlineStr})</span>` : "";
+
+                card.innerHTML = `
+                    ${(!task.completed && !isOverdueContext) ? `
+                    <div class="drag-handle" title="Drag to reorder">
+                        <svg viewBox="0 0 24 24"><path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+                    </div>` : ''}
+                    <label class="checkbox-container">
+                        <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="Actions.toggleTaskCompletion('${task.id}')">
+                        <span class="checkmark"></span>
+                    </label>
+                    <div class="task-info">
+                        <div class="task-title">${task.text}</div>
+                        <div class="task-duration">
+                            ${isOverdueContext ? `<span class="overdue-tag">${Utils.getFriendlyDateLabel(task.date)}</span>` : ''}
+                            ${durationLabel}${deadlineHtml}
+                        </div>
+                    </div>
+                    <div class="task-actions-wrapper">
+                        <button class="task-action-btn" onclick="Actions.openTaskModal('${task.id}')" title="Edit Task">
+                            <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                        </button>
+                        <button class="task-action-btn" onclick="Actions.toggleDropdown('${task.id}', event)" title="More Options">
+                            <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+                        </button>
+                    </div>
+                    <div class="menu-dropdown" id="dropdown-${task.id}">
+                        <button class="menu-item" onclick="Actions.duplicateTask('${task.id}')">Duplicate</button>
+                        <button class="menu-item delete-item" onclick="Actions.deleteTask('${task.id}')">Delete</button>
+                    </div>
+                `;
+
+                // Intercept HTML5 Desktop Drag Operations Mapping Lifecycle Rules
+                if(!task.completed && !isOverdueContext) {
+                    card.addEventListener("dragstart", DragDropEngine.handleDragStart);
+                    card.addEventListener("dragend", DragDropEngine.handleDragEnd);
+                    
+                    // Wire Touch interfaces mechanics directly for fluid cross platform compliance
+                    const handle = card.querySelector(".drag-handle");
+                    if(handle) {
+                        handle.addEventListener("mousedown", () => card.setAttribute("draggable", "true"));
+                        handle.addEventListener("mouseup", () => card.removeAttribute("draggable"));
+                        handle.addEventListener("mouseleave", () => card.removeAttribute("draggable"));
+                        handle.addEventListener("touchstart", DragDropEngine.handleTouchStart, {passive: false});
+                        handle.addEventListener("touchmove", DragDropEngine.handleTouchMove, {passive: false});
+                        handle.addEventListener("touchend", DragDropEngine.handleTouchEnd, {passive: false});
+                    }
+                }
+
+                return card;
+            },
+
+            renderTaskListsEngine() {
+                const todayStr = Utils.getTodayString();
+                
+                // 1. Process Overdue System Lists
+                const overdueWrapper = document.getElementById("overdue-section-wrapper");
+                const overdueContainer = document.getElementById("overdue-tasks-container");
+                overdueContainer.innerHTML = "";
+
+                const overdueTasks = State.tasks.filter(t => !t.completed && t.date < todayStr);
+                if(overdueTasks.length > 0) {
+                    document.getElementById("overdue-count").innerText = overdueTasks.length;
+                    overdueTasks.forEach(t => {
+                        overdueContainer.appendChild(this.buildTaskCardElement(t, true));
+                    });
+                    overdueWrapper.style.display = "block";
+                } else {
+                    overdueWrapper.style.display = "none";
+                }
+
+                // 2. Process Active/Completed Tasks for Selected Date
+                const activeContainer = document.getElementById("active-tasks-container");
+                const completedContainer = document.getElementById("completed-tasks-container");
+                
+                activeContainer.innerHTML = "";
+                completedContainer.innerHTML = "";
+
+                const targetDateTasks = State.tasks.filter(t => t.date === State.selectedDate);
+                // Enforce exact strict operational layout ordering metrics
+                targetDateTasks.sort((a,b) => a.order - b.order);
+
+                let activeCounter = 0;
+                let completedCounter = 0;
+
+                // Establish baseDate for running deadline calculation
+                const dateParts = State.selectedDate.split("-");
+                let baseDate;
+                if(State.planningStartTime) {
+                    const timeParts = State.planningStartTime.split(":");
+                    baseDate = new Date(
+                        parseInt(dateParts[0], 10),
+                        parseInt(dateParts[1], 10) - 1,
+                        parseInt(dateParts[2], 10),
+                        parseInt(timeParts[0], 10),
+                        parseInt(timeParts[1], 10),
+                        0, 0
+                    );
+                } else {
+                    const now = new Date();
+                    if(State.selectedDate === todayStr) {
+                        baseDate = new Date();
+                    } else {
+                        baseDate = new Date(
+                            parseInt(dateParts[0], 10),
+                            parseInt(dateParts[1], 10) - 1,
+                            parseInt(dateParts[2], 10),
+                            now.getHours(),
+                            now.getMinutes(),
+                            0, 0
+                        );
+                    }
+                }
+                let runningMinutes = 0;
+
+                targetDateTasks.forEach(t => {
+                    if(!t.completed) {
+                        const taskMins = (t.hours * 60) + t.minutes;
+                        runningMinutes += taskMins;
+                        const deadlineTime = new Date(baseDate.getTime() + runningMinutes * 60000);
+                        let hrs = deadlineTime.getHours();
+                        const mins = deadlineTime.getMinutes();
+                        const ampm = hrs >= 12 ? 'PM' : 'AM';
+                        hrs = hrs % 12 || 12;
+                        const minStr = mins < 10 ? '0' + mins : mins;
+                        const deadlineStr = `${hrs}:${minStr} ${ampm}`;
+                        activeContainer.appendChild(this.buildTaskCardElement(t, false, deadlineStr));
+                        activeCounter++;
+                    } else {
+                        completedContainer.appendChild(this.buildTaskCardElement(t, false));
+                        completedCounter++;
+                    }
+                });
+
+                document.getElementById("completed-count").innerText = completedCounter;
+            },
+
+            renderCalendarEngine() {
+                const year = State.calendarYear;
+                const month = State.calendarMonth;
+
+                const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+                document.getElementById("cal-month-year-label").innerText = `${monthNames[month]} ${year}`;
+
+                const container = document.getElementById("calendar-days-container");
+                container.innerHTML = "";
+
+                // Add standard structural baseline weekday header markers
+                const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+                dayLabels.forEach(lbl => {
+                    const el = document.createElement("div");
+                    el.className = "calendar-day-label";
+                    el.innerText = lbl;
+                    container.appendChild(el);
+                });
+
+                const firstDayIndex = new Date(year, month, 1).getDay();
+                const totalDays = new Date(year, month + 1, 0).getDate();
+
+                // Build operational spacer columns elements blocks
+                for(let i = 0; i < firstDayIndex; i++) {
+                    const cell = document.createElement("div");
+                    cell.className = "calendar-cell empty";
+                    container.appendChild(cell);
+                }
+
+                const todayIso = Utils.getTodayString();
+
+                // Compute operational matrix cells elements
+                for(let day = 1; day <= totalDays; day++) {
+                    const cell = document.createElement("div");
+                    cell.className = "calendar-cell";
+                    cell.innerText = day;
+
+                    // Compute current targeted internal date parameters
+                    let mStr = "" + (month + 1);
+                    let dStr = "" + day;
+                    if(mStr.length < 2) mStr = "0" + mStr;
+                    if(dStr.length < 2) dStr = "0" + dStr;
+                    const loopDateStr = `${year}-${mStr}-${dStr}`;
+
+                    if(loopDateStr === todayIso) cell.classList.add("today");
+                    if(loopDateStr === State.selectedDate) cell.classList.add("selected");
+
+                    // Map active metrics array dot vectors counts pointers
+                    const dayTasks = State.tasks.filter(t => t.date === loopDateStr);
+                    if(dayTasks.length > 0) {
+                        const dotsContainer = document.createElement("div");
+                        dotsContainer.className = "calendar-dots";
+                        // Draw up to max 3 dots visualization logic limits
+                        const maxDots = Math.min(dayTasks.length, 3);
+                        for(let d=0; d<maxDots; d++) {
+                            const dot = document.createElement("div");
+                            dot.className = "calendar-dot";
+                            dotsContainer.appendChild(dot);
+                        }
+                        cell.appendChild(dotsContainer);
+                    }
+
+                    cell.onclick = () => {
+                        State.selectedDate = loopDateStr;
+                        State.save();
+                        document.getElementById("calendar-screen").classList.remove("active");
+                        RenderEngine.fullRender();
+                    };
+
+                    container.appendChild(cell);
+                }
+            }
+        };
+
+        // Cross-Device High Performance Drag and Drop Engine
+        const DragDropEngine = {
+            activeDragElement: null,
+
+            handleDragStart(e) {
+                DragDropEngine.activeDragElement = this;
+                this.classList.add("dragging");
+                if(e.dataTransfer) {
+                    e.dataTransfer.effectAllowed = "move";
+                    e.dataTransfer.setData("text/html", this.innerHTML);
+                }
+            },
+
+            handleDragEnd() {
+                if(DragDropEngine.activeDragElement) {
+                    DragDropEngine.activeDragElement.classList.remove("dragging");
+                    DragDropEngine.activeDragElement.removeAttribute("draggable");
+                }
+                DragDropEngine.activeDragElement = null;
+                DragDropEngine.commitNewSortOrder();
+            },
+
+            // Native Core Structural Logic Calculation Engine Mapping Intersections
+            getDragAfterElement(container, yCoordinate) {
+                const draggableElements = [...container.querySelectorAll('.task-card:not(.dragging)')];
+                
+                return draggableElements.reduce((closest, child) => {
+                    const box = child.getBoundingClientRect();
+                    const offset = yCoordinate - box.top - box.height / 2;
+                    if (offset < 0 && offset > closest.offset) {
+                        return { offset: offset, element: child };
+                    } else {
+                        return closest;
+                    }
+                }, { offset: Number.NEGATIVE_INFINITY }).element;
+            },
+
+            // Precise Touch Interception Lifecycles Vectors
+            handleTouchStart(e) {
+                const card = this.closest(".task-card");
+                DragDropEngine.activeDragElement = card;
+                card.classList.add("dragging");
+            },
+
+            handleTouchMove(e) {
+                e.preventDefault(); // Lock downstream physical viewport structural scrolling loops
+                if(!DragDropEngine.activeDragElement) return;
+
+                const touchLocation = e.touches[0];
+                const container = document.getElementById("active-tasks-container");
+                
+                const afterElement = DragDropEngine.getDragAfterElement(container, touchLocation.clientY);
+                if (afterElement == null) {
+                    container.appendChild(DragDropEngine.activeDragElement);
+                } else {
+                    container.insertBefore(DragDropEngine.activeDragElement, afterElement);
+                }
+            },
+
+            handleTouchEnd(e) {
+                if(DragDropEngine.activeDragElement) {
+                    DragDropEngine.activeDragElement.classList.remove("dragging");
+                }
+                DragDropEngine.activeDragElement = null;
+                DragDropEngine.commitNewSortOrder();
+            },
+
+            commitNewSortOrder() {
+                const container = document.getElementById("active-tasks-container");
+                const renderedCards = [...container.querySelectorAll(".task-card")];
+                
+                renderedCards.forEach((card, index) => {
+                    const id = card.id;
+                    const task = State.tasks.find(t => t.id === id);
+                    if(task) {
+                        task.order = index;
+                    }
+                });
+
+                // Re-align historical array elements data structures safely
+                State.save();
+                RenderEngine.fullRender();
+            }
+        };
+
+        // Wire Event Listeners to Layout Containers Elements Viewports
+        function setupDOMEventListeners() {
+            // Setup Global Body Intercept clicks rule to dismiss active dropdown modules panels instantly
+            document.body.addEventListener("click", () => {
+                document.querySelectorAll(".menu-dropdown").forEach(m => m.classList.remove("active"));
+            });
+
+            // Planning Time Control Listeners
+            document.getElementById("planning-time-picker").onchange = function() {
+                if (this.value) {
+                    State.planningStartTime = this.value;
+                    State.save();
+                    RenderEngine.fullRender();
+                }
+            };
+            document.getElementById("planning-now-btn").onclick = function() {
+                State.planningStartTime = null;
+                State.save();
+                RenderEngine.fullRender();
+            };
+
+            // Dashboard Focus Mode Toggle — tap-safe (won't fire during a swipe)
+            const dashboardWrap = document.getElementById("dashboard-card-wrap");
+            let dashTouchStartX = 0;
+            let dashTouchStartY = 0;
+            let dashWasTouched = false;
+            dashboardWrap.addEventListener("touchstart", (e) => {
+                dashTouchStartX = e.touches[0].clientX;
+                dashTouchStartY = e.touches[0].clientY;
+                dashWasTouched = true;
+            }, { passive: true });
+            dashboardWrap.addEventListener("touchend", (e) => {
+                const dx = Math.abs(e.changedTouches[0].clientX - dashTouchStartX);
+                const dy = Math.abs(e.changedTouches[0].clientY - dashTouchStartY);
+                if (dx < 10 && dy < 10) {
+                    Actions.toggleDashboardFocus();
+                }
+            }, { passive: true });
+            dashboardWrap.addEventListener("click", () => {
+                // Desktop mouse click only — skip if triggered by touch (browser fires click after touchend)
+                if (dashWasTouched) { dashWasTouched = false; return; }
+                Actions.toggleDashboardFocus();
+            });
+
+            // Date Slider Mechanics Switches
+            document.getElementById("prev-day-btn").onclick = () => Actions.changeDateDelta(-1);
+            document.getElementById("next-day-btn").onclick = () => Actions.changeDateDelta(1);
+
+            // Modals Core Architecture Operations Triggers
+            document.getElementById("fab-add-task").onclick = () => Actions.openTaskModal();
+            document.getElementById("form-cancel-btn").onclick = () => Actions.closeTaskModal();
+            document.getElementById("task-mutation-form").onsubmit = (e) => Actions.submitTaskForm(e);
+
+            // Quick Add Event Processing Subroutine Loops
+            document.getElementById("quick-add-field").onkeydown = (e) => Actions.handleQuickAdd(e);
+
+            // Completed Section Collapsible Toggle Mechanics
+            document.getElementById("completed-trigger").onclick = function() {
+                this.classList.toggle("collapsed");
+                document.getElementById("completed-tasks-container").classList.toggle("collapsed");
+            };
+
+            // Migration Controls Linkage Points Configuration Layouts
+            document.getElementById("migrate-move-btn").onclick = () => Actions.executeMigration("move");
+            document.getElementById("migrate-keep-btn").onclick = () => Actions.executeMigration("keep");
+            document.getElementById("migrate-complete-btn").onclick = () => Actions.executeMigration("complete");
+
+            // Desktop Context Desktop Drag Interceptions Router
+            const activeContainer = document.getElementById("active-tasks-container");
+            activeContainer.addEventListener("dragover", (e) => {
+                e.preventDefault();
+                const afterElement = DragDropEngine.getDragAfterElement(activeContainer, e.clientY);
+                if(DragDropEngine.activeDragElement) {
+                    if (afterElement == null) {
+                        activeContainer.appendChild(DragDropEngine.activeDragElement);
+                    } else {
+                        activeContainer.insertBefore(DragDropEngine.activeDragElement, afterElement);
+                    }
+                }
+            });
+
+            // Interface Fullscreen Screen Transition Routing System Engine
+            document.getElementById("open-calendar-btn").onclick = () => {
+                document.getElementById("calendar-screen").classList.add("active");
+            };
+            document.getElementById("close-calendar-btn").onclick = () => {
+                document.getElementById("calendar-screen").classList.remove("active");
+            };
+            document.getElementById("open-settings-btn").onclick = () => {
+                document.getElementById("settings-screen").classList.add("active");
+            };
+            document.getElementById("close-settings-btn").onclick = () => {
+                document.getElementById("settings-screen").classList.remove("active");
+            };
+
+            document.getElementById("go-today-btn").onclick = () => {
+                State.selectedDate = Utils.getTodayString();
+                State.save();
+                RenderEngine.fullRender();
+            };
+
+            // Calendar Navigation Controls Mapping Links Rules
+            document.getElementById("cal-prev-month").onclick = () => {
+                State.calendarMonth--;
+                if(State.calendarMonth < 0) {
+                    State.calendarMonth = 11;
+                    State.calendarYear--;
+                }
+                RenderEngine.renderCalendarEngine();
+            };
+            document.getElementById("cal-next-month").onclick = () => {
+                State.calendarMonth++;
+                if(State.calendarMonth > 11) {
+                    State.calendarMonth = 0;
+                    State.calendarYear++;
+                }
+                RenderEngine.renderCalendarEngine();
+            };
+        }
+
+        // Swipe Navigation Engine — Main Screen & Calendar Screen
+        const SwipeEngine = {
+            // Shared state
+            touchStartX: 0,
+            touchStartY: 0,
+            touchStartTime: 0,
+            isSwiping: false,
+            swipeTarget: null, // 'main' | 'calendar'
+
+            SWIPE_THRESHOLD: 50,       // min horizontal px to count as swipe
+            ANGLE_THRESHOLD: 35,       // max degrees from horizontal to be considered horizontal
+            MAX_DURATION: 600,         // max ms for a swipe gesture
+
+            init() {
+                // Main content area (everything except overlays)
+                const mainArea = document.querySelector('.container');
+                mainArea.addEventListener('touchstart', (e) => SwipeEngine.onStart(e, 'main'), { passive: true });
+                mainArea.addEventListener('touchmove', (e) => SwipeEngine.onMove(e, 'main'), { passive: false });
+                mainArea.addEventListener('touchend', (e) => SwipeEngine.onEnd(e, 'main'), { passive: true });
+
+                // Calendar screen
+                const calScreen = document.getElementById('calendar-screen');
+                calScreen.addEventListener('touchstart', (e) => SwipeEngine.onStart(e, 'calendar'), { passive: true });
+                calScreen.addEventListener('touchmove', (e) => SwipeEngine.onMove(e, 'calendar'), { passive: false });
+                calScreen.addEventListener('touchend', (e) => SwipeEngine.onEnd(e, 'calendar'), { passive: true });
+            },
+
+            onStart(e, target) {
+                // Ignore multi-touch
+                if (e.touches.length !== 1) return;
+
+                // Don't interfere if a drag is in progress
+                if (DragDropEngine.activeDragElement) return;
+
+                // Don't swipe if a modal is open
+                if (document.querySelector('.modal-overlay.active')) return;
+
+                // Don't swipe if settings screen is open
+                if (document.getElementById('settings-screen').classList.contains('active')) return;
+
+                // For main screen swipes, only trigger when calendar is NOT open
+                if (target === 'main' && document.getElementById('calendar-screen').classList.contains('active')) return;
+
+                const touch = e.touches[0];
+                SwipeEngine.touchStartX = touch.clientX;
+                SwipeEngine.touchStartY = touch.clientY;
+                SwipeEngine.touchStartTime = Date.now();
+                SwipeEngine.isSwiping = false;
+                SwipeEngine.swipeTarget = target;
+            },
+
+            onMove(e, target) {
+                if (SwipeEngine.swipeTarget !== target) return;
+                if (DragDropEngine.activeDragElement) return;
+                if (e.touches.length !== 1) return;
+
+                const touch = e.touches[0];
+                const dx = touch.clientX - SwipeEngine.touchStartX;
+                const dy = touch.clientY - SwipeEngine.touchStartY;
+
+                // Calculate angle from horizontal
+                const angle = Math.abs(Math.atan2(Math.abs(dy), Math.abs(dx)) * 180 / Math.PI);
+
+                // If clearly more vertical than horizontal, let it scroll — don't claim this gesture
+                if (angle > SwipeEngine.ANGLE_THRESHOLD && !SwipeEngine.isSwiping) return;
+
+                // If we've determined it's horizontal, mark as swiping and prevent scroll
+                if (Math.abs(dx) > 10 && angle <= SwipeEngine.ANGLE_THRESHOLD) {
+                    SwipeEngine.isSwiping = true;
+                }
+
+                if (SwipeEngine.isSwiping) {
+                    e.preventDefault();
+                }
+            },
+
+            onEnd(e, target) {
+                if (SwipeEngine.swipeTarget !== target) return;
+                if (!SwipeEngine.isSwiping) return;
+                if (DragDropEngine.activeDragElement) return;
+
+                const duration = Date.now() - SwipeEngine.touchStartTime;
+                if (duration > SwipeEngine.MAX_DURATION) return;
+
+                const changedTouch = e.changedTouches[0];
+                const dx = changedTouch.clientX - SwipeEngine.touchStartX;
+                const dy = changedTouch.clientY - SwipeEngine.touchStartY;
+                const angle = Math.abs(Math.atan2(Math.abs(dy), Math.abs(dx)) * 180 / Math.PI);
+
+                // Must meet threshold and angle requirements
+                if (Math.abs(dx) < SwipeEngine.SWIPE_THRESHOLD) return;
+                if (angle > SwipeEngine.ANGLE_THRESHOLD) return;
+
+                if (target === 'main') {
+                    SwipeEngine.triggerMainSwipe(dx);
+                } else if (target === 'calendar') {
+                    SwipeEngine.triggerCalendarSwipe(dx);
+                }
+
+                SwipeEngine.isSwiping = false;
+                SwipeEngine.swipeTarget = null;
+            },
+
+            triggerMainSwipe(dx) {
+                if (dx < 0) {
+                    Actions.changeDateDelta(1);  // swipe left → next day
+                } else {
+                    Actions.changeDateDelta(-1); // swipe right → prev day
+                }
+            },
+
+            triggerCalendarSwipe(dx) {
+                const calGrid = document.querySelector('.calendar-grid');
+                const direction = dx < 0 ? -1 : 1;
+
+                if (calGrid) {
+                    calGrid.style.transition = 'transform 0.15s ease, opacity 0.15s ease';
+                    calGrid.style.transform = `translateX(${direction * -20}px)`;
+                    calGrid.style.opacity = '0.4';
+                }
+
+                setTimeout(() => {
+                    if (dx < 0) {
+                        // swipe left → next month (same as cal-next-month button)
+                        State.calendarMonth++;
+                        if (State.calendarMonth > 11) {
+                            State.calendarMonth = 0;
+                            State.calendarYear++;
+                        }
+                    } else {
+                        // swipe right → prev month (same as cal-prev-month button)
+                        State.calendarMonth--;
+                        if (State.calendarMonth < 0) {
+                            State.calendarMonth = 11;
+                            State.calendarYear--;
+                        }
+                    }
+                    RenderEngine.renderCalendarEngine();
+
+                    if (calGrid) {
+                        calGrid.style.transition = 'none';
+                        calGrid.style.transform = `translateX(${direction * 20}px)`;
+                        calGrid.style.opacity = '0.4';
+                        requestAnimationFrame(() => {
+                            requestAnimationFrame(() => {
+                                calGrid.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+                                calGrid.style.transform = 'translateX(0)';
+                                calGrid.style.opacity = '1';
+                            });
+                        });
+                    }
+                }, 100);
+            }
+        };
+
+        // Global Orchestration Initialization Lifecycle System Execution Step
+        window.addEventListener("DOMContentLoaded", () => {
+            State.load();
+            Actions.switchTheme(State.theme);
+            setupDOMEventListeners();
+            SwipeEngine.init();
+            RenderEngine.fullRender();
+            
+            // Queue critical workspace asset pipeline processing checks
+            setTimeout(() => {
+                Actions.checkMigrationRoutine();
+            }, 400);
+        });
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then((registration) => console.log('Service Worker registered with scope:', registration.scope))
+            .catch((error) => console.error('Service Worker registration failed:', error));
+    });
+}
+    </script>
+</body>
+</html>
