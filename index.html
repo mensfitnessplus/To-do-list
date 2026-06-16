@@ -40,7 +40,6 @@
             --shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
         }
 
-        /* Soft Dark: An Obsidian Slate theme that is dark but much easier on the eyes than AMOLED black */
         [data-theme="obsidian"] {
             --bg: #1E1E1E;
             --card: #252525;
@@ -54,7 +53,6 @@
             --shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
         }
 
-        /* Soft Light: A cool-toned, crisp alternative to the warm beige */
         [data-theme="cloud"] {
             --bg: #F3F4F6;
             --card: #FFFFFF;
@@ -68,7 +66,6 @@
             --shadow: 0 4px 12px rgba(79, 70, 229, 0.1);
         }
 
-        /* Mid-Tone: A warm, muted sepia that sits perfectly halfway between light and dark */
         [data-theme="sepia"] {
             --bg: #EAE6D9;
             --card: #F4F1E8;
@@ -107,7 +104,6 @@
             min-height: 100vh;
         }
 
-        /* Header Navigation */
         header {
             display: flex;
             justify-content: space-between;
@@ -151,7 +147,6 @@
             fill: currentColor;
         }
 
-        /* Date Navigation Bar */
         .date-nav {
             display: flex;
             justify-content: space-between;
@@ -187,7 +182,6 @@
             text-align: center;
         }
 
-        /* Dashboard Metrics */
         .dashboard-card {
             background: var(--card);
             border: 1px solid var(--border);
@@ -248,7 +242,6 @@
             display: block;
         }
 
-        /* Estimation Card */
         .estimation-card {
             background: var(--card);
             border: 1px solid var(--border);
@@ -269,7 +262,6 @@
             font-weight: 700;
         }
 
-        /* Progress Bar Card */
         .progress-card {
             background: var(--card);
             border: 1px solid var(--border);
@@ -302,7 +294,6 @@
             transition: width 0.4s ease;
         }
 
-        /* Quick Add Input */
         .quick-add-container {
             margin-bottom: 24px;
         }
@@ -324,7 +315,6 @@
             border-color: var(--accent);
         }
 
-        /* Sections Headers */
         .section-title {
             font-size: 14px;
             font-weight: 700;
@@ -356,7 +346,6 @@
             transform: rotate(-90deg);
         }
 
-        /* Lists Containers */
         .task-list {
             display: flex;
             flex-direction: column;
@@ -369,7 +358,6 @@
             display: none;
         }
 
-        /* Task Card Styling */
         .task-card {
             background: var(--card);
             border: 1px solid var(--border);
@@ -381,6 +369,7 @@
             box-shadow: var(--shadow);
             position: relative;
             transition: transform 0.15s, opacity 0.15s;
+            user-select: none;
         }
 
         .task-card.dragging {
@@ -530,7 +519,6 @@
             fill: currentColor;
         }
 
-        /* Action Dropdown Menu */
         .menu-dropdown {
             position: absolute;
             right: 14px;
@@ -570,7 +558,6 @@
             color: var(--danger);
         }
 
-        /* Floating Action Button (FAB) */
         .fab {
             position: fixed;
             bottom: 24px;
@@ -601,7 +588,6 @@
             fill: currentColor;
         }
 
-        /* Modals & Fullscreens Overlays */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -644,7 +630,6 @@
             margin-bottom: 20px;
         }
 
-        /* Form Controls */
         .form-group {
             margin-bottom: 16px;
         }
@@ -719,7 +704,6 @@
             color: #FFF;
         }
 
-        /* Screen/Panels Overlay Architecture (Calendar and Settings) */
         .screen-overlay {
             position: fixed;
             top: 0;
@@ -750,10 +734,9 @@
             text-align: center;
             font-size: 18px;
             font-weight: 700;
-            margin-right: 44px; /* balance the back button alignment */
+            margin-right: 44px;
         }
 
-        /* Timeline View Specifics */
         .timeline-container { padding: 16px; display: flex; flex-direction: column; gap: 0; }
         .timeline-item { display: flex; gap: 12px; margin-bottom: 12px; }
         .timeline-time { width: 65px; font-size: 12px; font-weight: 700; color: var(--text-muted); text-align: right; flex-shrink: 0; padding-top: 4px; }
@@ -762,7 +745,6 @@
         .timeline-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
         .timeline-duration { font-size: 11px; color: var(--text-muted); }
 
-        /* Monthly Calendar Specifics */
         .calendar-nav {
             display: flex;
             justify-content: space-between;
@@ -837,7 +819,6 @@
             background: #FFF;
         }
 
-        /* Settings Screen Design */
         .settings-list {
             padding: 16px;
             display: flex;
@@ -933,6 +914,35 @@
 
         .about-box p:last-child {
             margin-bottom: 0;
+        }
+
+        .color-picker-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .color-picker-dot {
+            aspect-ratio: 1;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: var(--transition);
+        }
+
+        .color-picker-dot.selected {
+            border-color: var(--text);
+            transform: scale(1.1);
+        }
+
+        .ends-at-large-display {
+            font-size: 24px;
+            font-weight: 800;
+            text-align: center;
+            margin: 24px 0 12px 0;
+            color: var(--text);
+            letter-spacing: -0.5px;
         }
     </style>
 </head>
@@ -1074,6 +1084,24 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="customization-modal">
+        <div class="modal-card">
+            <div class="modal-title">Customize Task Style</div>
+            <div class="form-group">
+                <label>Select Accent Color</label>
+                <div class="color-picker-grid" id="custom-color-grid"></div>
+            </div>
+            <div class="form-group">
+                <label for="custom-emoji-input">Assign Emoji Prefix</label>
+                <input type="text" id="custom-emoji-input" class="form-input" placeholder="e.g. 📚, ☕, 📝 (Leave blank to remove)">
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-text" id="custom-cancel-btn">Cancel</button>
+                <button type="button" class="btn btn-primary" id="custom-save-btn">Apply</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="migration-modal">
         <div class="modal-card">
             <div class="modal-title">Unfinished Overdue Tasks</div>
@@ -1096,6 +1124,16 @@
             <div class="screen-title">Daily Schedule</div>
         </div>
         <div class="timeline-container" id="timeline-container"></div>
+        <div id="timeline-ends-at-display" class="ends-at-large-display"></div>
+        <div class="progress-card" id="timeline-progress-card-wrap" style="margin: 0 16px 24px 16px;">
+            <div class="progress-header">
+                <span id="timeline-progress-text-ratio">0h 0m / 0h 0m</span>
+                <span id="timeline-progress-text-percent">0%</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill" id="timeline-progress-bar-fill"></div>
+            </div>
+        </div>
     </div>
 
     <div class="screen-overlay" id="calendar-screen">
@@ -1179,16 +1217,16 @@
     </div>
 
     <script>
-        // Reactive Application State Engine
         const State = {
             tasks: [],
-            selectedDate: "", // YYYY-MM-DD format
+            selectedDate: "", 
             theme: "beige",
-            migrationDecisions: {}, // tracks user choice per calendar date
+            migrationDecisions: {}, 
             calendarYear: 2026,
-            calendarMonth: 5, // June (0-indexed base)
-            planningStartTime: null, // null means "Now" mode, otherwise "HH:MM"
-            dashboardCollapsed: false, // New focus mode state
+            calendarMonth: 5, 
+            planningStartTime: null, 
+            dashboardCollapsed: false, 
+            customStyles: {}, // Keyed by task.id -> { color: hex, emoji: string }
             
             save() {
                 localStorage.setItem("todo_app_tasks", JSON.stringify(this.tasks));
@@ -1197,6 +1235,7 @@
                 localStorage.setItem("todo_app_migrationDecisions", JSON.stringify(this.migrationDecisions));
                 localStorage.setItem("todo_app_planningTime", this.planningStartTime || "");
                 localStorage.setItem("todo_app_dashboardCollapsed", this.dashboardCollapsed);
+                localStorage.setItem("todo_app_customStyles", JSON.stringify(this.customStyles));
             },
             
             load() {
@@ -1221,14 +1260,15 @@
 
                 this.dashboardCollapsed = localStorage.getItem("todo_app_dashboardCollapsed") === "true";
 
-                // Sync UI runtime state variables to internal calendar viewport settings values
+                const cachedStyles = localStorage.getItem("todo_app_customStyles");
+                if(cachedStyles) this.customStyles = JSON.parse(cachedStyles);
+
                 const parts = this.selectedDate.split("-");
                 this.calendarYear = parseInt(parts[0], 10);
                 this.calendarMonth = parseInt(parts[1], 10) - 1;
             }
         };
 
-        // Utility Math & Functional String Parsing Operations Matrix
         const Utils = {
             getTodayString() {
                 const d = new Date();
@@ -1255,7 +1295,6 @@
                 let hours = 0;
                 let minutes = 0;
 
-                // Support both "2h 30m" and combined "2h30m"
                 const combinedRegex = /(\d+)\s*h\s*(\d+)\s*m/i;
                 const hourRegex = /(\d+)\s*h/i;
                 const minRegex = /(\d+)\s*m/i;
@@ -1283,55 +1322,23 @@
 
                 return { text, hours, minutes };
             },
-            getFinishTimeEstimationStr(remainingMinutes) {
-                if (remainingMinutes <= 0) return "🕒 Finish By: No remaining work";
+            getFinishTimeEstimationStr(remainingMinutes, totalMinutesWithBreaks) {
+                let actualMinutesToShift = totalMinutesWithBreaks !== undefined ? totalMinutesWithBreaks : remainingMinutes;
+                if (actualMinutesToShift <= 0) return "🕒 Finish By: No remaining work";
                 
-                let baseDate;
-                const todayStr = this.getTodayString();
-                const dateParts = State.selectedDate.split("-");
-                
-                if (State.planningStartTime) {
-                    // Mode 2: Fixed Time (Anchors to globally saved start time on the targeted date)
-                    const timeParts = State.planningStartTime.split(":");
-                    baseDate = new Date(
-                        parseInt(dateParts[0], 10),
-                        parseInt(dateParts[1], 10) - 1,
-                        parseInt(dateParts[2], 10),
-                        parseInt(timeParts[0], 10),
-                        parseInt(timeParts[1], 10),
-                        0, 0
-                    );
-                } else {
-                    // Mode 1: Now
-                    if (State.selectedDate === todayStr) {
-                        baseDate = new Date();
-                    } else {
-                        // For future dates in "Now" mode, defaults calculation start anchor to current device clock hour/min
-                        const now = new Date();
-                        baseDate = new Date(
-                            parseInt(dateParts[0], 10),
-                            parseInt(dateParts[1], 10) - 1,
-                            parseInt(dateParts[2], 10),
-                            now.getHours(),
-                            now.getMinutes(),
-                            0, 0
-                        );
-                    }
-                }
-
-                const targetTime = new Date(baseDate.getTime() + remainingMinutes * 60000);
+                let baseDate = Utils.getCalculatedBaseDate();
+                const targetTime = new Date(baseDate.getTime() + actualMinutesToShift * 60000);
                 
                 let hours = targetTime.getHours();
                 const minutes = targetTime.getMinutes();
                 const ampm = hours >= 12 ? 'PM' : 'AM';
-                hours = hours % 12;
-                hours = hours ? hours : 12; 
+                hours = hours % 12 || 12;
                 const minStr = minutes < 10 ? '0' + minutes : minutes;
                 const timeStr = `${hours}:${minStr} ${ampm}`;
 
+                const todayStr = this.getTodayString();
                 const targetDateStr = this.formatDateIso(targetTime);
 
-                // If viewing today's workspace panel
                 if (State.selectedDate === todayStr) {
                     const tomorrow = new Date(baseDate);
                     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -1344,7 +1351,6 @@
                     }
                 } 
 
-                // Viewing future or crossing midnight from a future day - Output pure calendar dates like "25 Jun, 12:00 PM"
                 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
                 const smartDateOutput = `${targetTime.getDate()} ${monthNames[targetTime.getMonth()]}`;
                 return `🕒 Finish By: ${smartDateOutput}, ${timeStr}`;
@@ -1355,10 +1361,40 @@
                 const d = new Date(parts[0], parts[1] - 1, parts[2]);
                 const options = { day: 'numeric', month: 'short', year: 'numeric' };
                 return d.toLocaleDateString('en-US', options);
+            },
+            getCalculatedBaseDate() {
+                const todayStr = this.getTodayString();
+                const dateParts = State.selectedDate.split("-");
+                let baseDate;
+                if (State.planningStartTime) {
+                    const timeParts = State.planningStartTime.split(":");
+                    baseDate = new Date(
+                        parseInt(dateParts[0], 10),
+                        parseInt(dateParts[1], 10) - 1,
+                        parseInt(dateParts[2], 10),
+                        parseInt(timeParts[0], 10),
+                        parseInt(timeParts[1], 10),
+                        0, 0
+                    );
+                } else {
+                    const now = new Date();
+                    if (State.selectedDate === todayStr) {
+                        baseDate = new Date();
+                    } else {
+                        baseDate = new Date(
+                            parseInt(dateParts[0], 10),
+                            parseInt(dateParts[1], 10) - 1,
+                            parseInt(dateParts[2], 10),
+                            now.getHours(),
+                            now.getMinutes(),
+                            0, 0
+                        );
+                    }
+                }
+                return baseDate;
             }
         };
 
-        // Actions, Modifiers, Controllers Interface Module Blueprint
         const Actions = {
             toggleDashboardFocus() {
                 State.dashboardCollapsed = !State.dashboardCollapsed;
@@ -1370,7 +1406,6 @@
                 State.theme = themeName;
                 document.documentElement.setAttribute("data-theme", themeName);
                 
-                // Dynamically update the header/status bar color
                 const themeColors = {
                     'beige': '#F5F0E6',
                     'cloud': '#F3F4F6',
@@ -1383,12 +1418,10 @@
                     metaThemeColor.setAttribute('content', themeColors[themeName]);
                 }
                 
-                // Clear the active state from all theme buttons
                 document.querySelectorAll('.theme-btn').forEach(btn => {
                     btn.classList.remove('active');
                 });
                 
-                // Apply the active state to the newly selected button
                 const targetBtn = document.getElementById(`theme-btn-${themeName}`);
                 if (targetBtn) {
                     targetBtn.classList.add('active');
@@ -1435,6 +1468,45 @@
                 document.getElementById("task-modal").classList.remove("active");
             },
 
+            openCustomizationModal(taskId) {
+                const overlay = document.getElementById("customization-modal");
+                const grid = document.getElementById("custom-color-grid");
+                const emojiInput = document.getElementById("custom-emoji-input");
+                
+                grid.innerHTML = "";
+                const colors = ["#C8A97E", "#4F46E5", "#D97A62", "#8A5CF5", "#5CB85C", "#D9534F", "#3498DB", "#9B59B6", "#E67E22", "#16A085"];
+                
+                let currentStyle = State.customStyles[taskId] || { color: "", emoji: "" };
+                emojiInput.value = currentStyle.emoji || "";
+                
+                colors.forEach(color => {
+                    const dot = document.createElement("div");
+                    dot.className = "color-picker-dot";
+                    dot.style.backgroundColor = color;
+                    if(currentStyle.color === color) dot.classList.add("selected");
+                    
+                    dot.onclick = () => {
+                        document.querySelectorAll(".color-picker-dot").forEach(d => d.classList.remove("selected"));
+                        dot.classList.add("selected");
+                        dot.setAttribute("data-color", color);
+                    };
+                    grid.appendChild(dot);
+                });
+
+                overlay.classList.add("active");
+
+                document.getElementById("custom-save-btn").onclick = () => {
+                    const selectedDot = document.querySelector(".color-picker-dot.selected");
+                    const colorVal = selectedDot ? selectedDot.getAttribute("data-color") : "";
+                    const emojiVal = emojiInput.value.trim();
+                    
+                    State.customStyles[taskId] = { color: colorVal, emoji: emojiVal };
+                    State.save();
+                    overlay.classList.remove("active");
+                    RenderEngine.fullRender();
+                };
+            },
+
             submitTaskForm(e) {
                 e.preventDefault();
                 const id = document.getElementById("form-task-id").value;
@@ -1446,7 +1518,6 @@
                 if(!text) return;
 
                 if(id) {
-                    // Mutation Update Mode
                     const task = State.tasks.find(t => t.id === id);
                     if(task) {
                         task.text = text;
@@ -1455,7 +1526,6 @@
                         task.date = date;
                     }
                 } else {
-                    // Assignment Mode Creation
                     const targetDateTasks = State.tasks.filter(t => t.date === date);
                     const orderIndex = targetDateTasks.length;
                     const newTask = {
@@ -1512,10 +1582,8 @@
                     completed: false
                 };
 
-                // Inject clone immediately behind the array stack coordinates
                 State.tasks.push(clone);
                 
-                // Readjust order elements indices safely
                 let indexCounter = 0;
                 activeDayTasks.forEach((t, idx) => {
                     t.order = indexCounter++;
@@ -1531,6 +1599,7 @@
             deleteTask(taskId) {
                 if(confirm("Are you sure you want to permanently delete this task?")) {
                     State.tasks = State.tasks.filter(t => t.id !== taskId);
+                    if(State.customStyles[taskId]) delete State.customStyles[taskId];
                     State.save();
                     RenderEngine.fullRender();
                 }
@@ -1541,16 +1610,16 @@
                     const inputField = document.getElementById("quick-add-field");
                     let rawVal = inputField.value.trim();
                     if(!rawVal) return;
-                    
+
                     let isBreak = false;
                     if (rawVal.startsWith('/') || rawVal.startsWith('\\')) {
                         isBreak = true;
                         rawVal = rawVal.substring(1).trim();
                     }
-                    
+
                     const parsed = Utils.parseQuickAdd(rawVal);
                     const targetTasks = State.tasks.filter(t => t.date === State.selectedDate);
-                    
+
                     const newTask = {
                         id: Utils.generateUUID(),
                         text: parsed.text,
@@ -1562,7 +1631,7 @@
                         createdAt: Date.now(),
                         order: targetTasks.length
                     };
-                    
+
                     State.tasks.push(newTask);
                     State.save();
                     inputField.value = "";
@@ -1572,7 +1641,7 @@
 
             checkMigrationRoutine() {
                 const todayStr = Utils.getTodayString();
-                if(State.migrationDecisions[todayStr]) return; // Execution check verified already
+                if(State.migrationDecisions[todayStr]) return; 
 
                 const overdueExist = State.tasks.some(t => !t.completed && t.date < todayStr);
                 if(overdueExist) {
@@ -1607,7 +1676,8 @@
                     tasks: State.tasks,
                     theme: State.theme,
                     migrationDecisions: State.migrationDecisions,
-                    selectedDate: State.selectedDate
+                    selectedDate: State.selectedDate,
+                    customStyles: State.customStyles
                 };
                 const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(bundle));
                 const downloadAnchor = document.createElement('a');
@@ -1631,6 +1701,7 @@
                             if(parsed.theme) State.theme = parsed.theme;
                             if(parsed.migrationDecisions) State.migrationDecisions = parsed.migrationDecisions;
                             if(parsed.selectedDate) State.selectedDate = parsed.selectedDate;
+                            if(parsed.customStyles) State.customStyles = parsed.customStyles;
                             
                             State.save();
                             alert("Data successfully restored from backup.");
@@ -1653,7 +1724,6 @@
             }
         };
 
-        // Render Engine Dom Manipulations Matrix Layer
         const RenderEngine = {
             fullRender() {
                 this.renderMetadataHeaders();
@@ -1675,22 +1745,26 @@
                 
                 let scheduledMins = 0;
                 let completedMins = 0;
+                let totalUncompletedMinsWithBreaks = 0;
 
-                targetDateTasks.forEach(t => {
+                let baseDate = Utils.getCalculatedBaseDate();
+                let runningTimeMs = baseDate.getTime();
+
+                targetDateTasks.sort((a, b) => a.order - b.order).forEach(t => {
+                    const durationMins = (t.hours * 60) + t.minutes;
                     if (!t.isBreak) {
-                        const duration = (t.hours * 60) + t.minutes;
-                        scheduledMins += duration;
-                        if(t.completed) completedMins += duration;
+                        scheduledMins += durationMins;
+                        if(t.completed) completedMins += durationMins;
+                    }
+                    if(!t.completed) {
+                        totalUncompletedMinsWithBreaks += durationMins;
                     }
                 });
 
-                const remainingMins = scheduledMins - completedMins;
-
                 document.getElementById("dash-scheduled").innerText = Utils.formatHoursMins(scheduledMins);
                 document.getElementById("dash-completed").innerText = Utils.formatHoursMins(completedMins);
-                document.getElementById("dash-remaining").innerText = Utils.formatHoursMins(remainingMins);
+                document.getElementById("dash-remaining").innerText = Utils.formatHoursMins(scheduledMins - completedMins);
 
-                // Sync values directly into the input nodes matrix variables
                 const modeLabel = document.getElementById("planning-mode-display");
                 const picker = document.getElementById("planning-time-picker");
                 if (State.planningStartTime) {
@@ -1706,10 +1780,8 @@
                     modeLabel.innerText = "Now";
                 }
 
-                // Estimation Processor Interface
-                document.getElementById("estimation-time-output").innerText = Utils.getFinishTimeEstimationStr(remainingMins);
+                document.getElementById("estimation-time-output").innerText = Utils.getFinishTimeEstimationStr(scheduledMins - completedMins, totalUncompletedMinsWithBreaks);
 
-                // Progress Card Calculations Processing
                 const progressTextRatio = document.getElementById("progress-text-ratio");
                 const progressTextPercent = document.getElementById("progress-text-percent");
                 const progressBarFill = document.getElementById("progress-bar-fill");
@@ -1723,8 +1795,7 @@
                 progressTextPercent.innerText = `${percent}%`;
                 progressBarFill.style.width = `${percent}%`;
 
-                // Process Dashboard Compact Mode
-                document.getElementById("dashboard-compact-summary").innerText = `Scheduled ${Utils.formatHoursMins(scheduledMins)} • Remaining ${Utils.formatHoursMins(remainingMins)}`;
+                document.getElementById("dashboard-compact-summary").innerText = `Scheduled ${Utils.formatHoursMins(scheduledMins)} • Remaining ${Utils.formatHoursMins(scheduledMins - completedMins)}`;
 
                 const metricsGrid = document.getElementById("dashboard-metrics-grid");
                 const compactSummary = document.getElementById("dashboard-compact-summary");
@@ -1761,6 +1832,9 @@
                 const durationLabel = Utils.formatHoursMins(totalMins);
                 const deadlineHtml = deadlineStr ? `<span style="margin-left: 4px; font-weight: 700; color: var(--accent-dark);">(${deadlineStr})</span>` : "";
 
+                let customStyle = State.customStyles[task.id] || { color: "", emoji: "" };
+                let displayTitle = (customStyle.emoji ? customStyle.emoji + " " : "") + task.text;
+
                 card.innerHTML = `
                     ${(!task.completed && !isOverdueContext) ? `
                     <div class="drag-handle" title="Drag to reorder">
@@ -1771,7 +1845,7 @@
                         <span class="checkmark"></span>
                     </label>
                     <div class="task-info">
-                        <div class="task-title">${task.text}</div>
+                        <div class="task-title">${displayTitle}</div>
                         <div class="task-duration">
                             ${isOverdueContext ? `<span class="overdue-tag">${Utils.getFriendlyDateLabel(task.date)}</span>` : ''}
                             ${durationLabel}${deadlineHtml}
@@ -1791,12 +1865,10 @@
                     </div>
                 `;
 
-                // Intercept HTML5 Desktop Drag Operations Mapping Lifecycle Rules
                 if(!task.completed && !isOverdueContext) {
                     card.addEventListener("dragstart", DragDropEngine.handleDragStart);
                     card.addEventListener("dragend", DragDropEngine.handleDragEnd);
                     
-                    // Wire Touch interfaces mechanics directly for fluid cross platform compliance
                     const handle = card.querySelector(".drag-handle");
                     if(handle) {
                         handle.addEventListener("mousedown", () => card.setAttribute("draggable", "true"));
@@ -1814,7 +1886,6 @@
             renderTaskListsEngine() {
                 const todayStr = Utils.getTodayString();
                 
-                // 1. Process Overdue System Lists
                 const overdueWrapper = document.getElementById("overdue-section-wrapper");
                 const overdueContainer = document.getElementById("overdue-tasks-container");
                 overdueContainer.innerHTML = "";
@@ -1830,7 +1901,6 @@
                     overdueWrapper.style.display = "none";
                 }
 
-                // 2. Process Active/Completed Tasks for Selected Date
                 const activeContainer = document.getElementById("active-tasks-container");
                 const completedContainer = document.getElementById("completed-tasks-container");
                 
@@ -1838,40 +1908,12 @@
                 completedContainer.innerHTML = "";
 
                 const targetDateTasks = State.tasks.filter(t => t.date === State.selectedDate);
-                // Enforce exact strict operational layout ordering metrics
                 targetDateTasks.sort((a,b) => a.order - b.order);
 
                 let activeCounter = 0;
                 let completedCounter = 0;
 
-                // Establish baseDate for running deadline calculation
-                const dateParts = State.selectedDate.split("-");
-                let baseDate;
-                if(State.planningStartTime) {
-                    const timeParts = State.planningStartTime.split(":");
-                    baseDate = new Date(
-                        parseInt(dateParts[0], 10),
-                        parseInt(dateParts[1], 10) - 1,
-                        parseInt(dateParts[2], 10),
-                        parseInt(timeParts[0], 10),
-                        parseInt(timeParts[1], 10),
-                        0, 0
-                    );
-                } else {
-                    const now = new Date();
-                    if(State.selectedDate === todayStr) {
-                        baseDate = new Date();
-                    } else {
-                        baseDate = new Date(
-                            parseInt(dateParts[0], 10),
-                            parseInt(dateParts[1], 10) - 1,
-                            parseInt(dateParts[2], 10),
-                            now.getHours(),
-                            now.getMinutes(),
-                            0, 0
-                        );
-                    }
-                }
+                let baseDate = Utils.getCalculatedBaseDate();
                 let runningMinutes = 0;
 
                 targetDateTasks.forEach(t => {
@@ -1906,7 +1948,6 @@
                 const container = document.getElementById("calendar-days-container");
                 container.innerHTML = "";
 
-                // Add standard structural baseline weekday header markers
                 const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
                 dayLabels.forEach(lbl => {
                     const el = document.createElement("div");
@@ -1918,7 +1959,6 @@
                 const firstDayIndex = new Date(year, month, 1).getDay();
                 const totalDays = new Date(year, month + 1, 0).getDate();
 
-                // Build operational spacer columns elements blocks
                 for(let i = 0; i < firstDayIndex; i++) {
                     const cell = document.createElement("div");
                     cell.className = "calendar-cell empty";
@@ -1927,13 +1967,11 @@
 
                 const todayIso = Utils.getTodayString();
 
-                // Compute operational matrix cells elements
                 for(let day = 1; day <= totalDays; day++) {
                     const cell = document.createElement("div");
                     cell.className = "calendar-cell";
                     cell.innerText = day;
 
-                    // Compute current targeted internal date parameters
                     let mStr = "" + (month + 1);
                     let dStr = "" + day;
                     if(mStr.length < 2) mStr = "0" + mStr;
@@ -1943,12 +1981,10 @@
                     if(loopDateStr === todayIso) cell.classList.add("today");
                     if(loopDateStr === State.selectedDate) cell.classList.add("selected");
 
-                    // Map active metrics array dot vectors counts pointers
                     const dayTasks = State.tasks.filter(t => t.date === loopDateStr);
                     if(dayTasks.length > 0) {
                         const dotsContainer = document.createElement("div");
                         dotsContainer.className = "calendar-dots";
-                        // Draw up to max 3 dots visualization logic limits
                         const maxDots = Math.min(dayTasks.length, 3);
                         for(let d=0; d<maxDots; d++) {
                             const dot = document.createElement("div");
@@ -1975,49 +2011,25 @@
                 container.innerHTML = "";
 
                 const targetDateTasks = State.tasks.filter(t => t.date === State.selectedDate);
-                targetDateTasks.sort((a,b) => a.order - b.order);
+                const activeTimelineTasks = targetDateTasks.filter(t => !t.completed);
+                activeTimelineTasks.sort((a,b) => a.order - b.order);
 
-                if (targetDateTasks.length === 0) {
-                    container.innerHTML = "<div style='text-align:center; color:var(--text-muted); padding: 40px 20px;'>No tasks scheduled for this day.</div>";
+                if (activeTimelineTasks.length === 0) {
+                    container.innerHTML = "<div style='text-align:center; color:var(--text-muted); padding: 40px 20px;'>No uncompleted tasks scheduled for this day.</div>";
+                    document.getElementById("timeline-ends-at-display").innerText = "";
+                    this.syncTimelineProgressBar(0, 0);
                     return;
                 }
 
-                const todayStr = Utils.getTodayString();
-                const dateParts = State.selectedDate.split("-");
-                let baseDate;
-                
-                if (State.planningStartTime) {
-                    const timeParts = State.planningStartTime.split(":");
-                    baseDate = new Date(
-                        parseInt(dateParts[0], 10),
-                        parseInt(dateParts[1], 10) - 1,
-                        parseInt(dateParts[2], 10),
-                        parseInt(timeParts[0], 10),
-                        parseInt(timeParts[1], 10),
-                        0, 0
-                    );
-                } else {
-                    const now = new Date();
-                    if (State.selectedDate === todayStr) {
-                        baseDate = new Date();
-                    } else {
-                        baseDate = new Date(
-                            parseInt(dateParts[0], 10),
-                            parseInt(dateParts[1], 10) - 1,
-                            parseInt(dateParts[2], 10),
-                            now.getHours(),
-                            now.getMinutes(),
-                            0, 0
-                        );
-                    }
-                }
-
+                let baseDate = Utils.getCalculatedBaseDate();
                 let currentStartTime = baseDate.getTime();
+                let finalEndTimeObj = null;
 
-                targetDateTasks.forEach(task => {
+                activeTimelineTasks.forEach(task => {
                     const durationMs = ((task.hours * 60) + task.minutes) * 60000;
                     const startTimeObj = new Date(currentStartTime);
                     const endTimeObj = new Date(currentStartTime + durationMs);
+                    finalEndTimeObj = endTimeObj;
                     
                     const formatTime = (d) => {
                         let h = d.getHours();
@@ -2031,25 +2043,82 @@
                     const item = document.createElement("div");
                     item.className = "timeline-item";
                     
+                    let customStyle = State.customStyles[task.id] || { color: "", emoji: "" };
                     const contentClass = task.isBreak ? "timeline-content break-timeline" : "timeline-content";
-                    const titleStyle = task.completed ? 'text-decoration: line-through; opacity: 0.6;' : '';
+                    
+                    let dynamicLeftBorder = "";
+                    if (!task.isBreak && customStyle.color) {
+                        dynamicLeftBorder = `border-left-color: ${customStyle.color};`;
+                    }
+                    
+                    let displayTitle = (customStyle.emoji ? customStyle.emoji + " " : "") + task.text;
                     
                     item.innerHTML = `
                         <div class="timeline-time">
                             <div>${formatTime(startTimeObj)}</div>
                         </div>
-                        <div class="${contentClass}">
-                            <div class="timeline-title" style="${titleStyle}">${task.text}</div>
+                        <div class="${contentClass}" style="${dynamicLeftBorder}">
+                            <div class="timeline-title">${displayTitle}</div>
                             <div class="timeline-duration">${Utils.formatHoursMins((task.hours * 60) + task.minutes)} • Ends at ${formatTime(endTimeObj)}</div>
                         </div>
                     `;
+
+                    let pressTimer;
+                    const startPress = () => {
+                        pressTimer = setTimeout(() => Actions.openCustomizationModal(task.id), 600);
+                    };
+                    const clearPress = () => clearTimeout(pressTimer);
+
+                    item.addEventListener("touchstart", startPress, { passive: true });
+                    item.addEventListener("touchmove", clearPress, { passive: true });
+                    item.addEventListener("touchend", clearPress, { passive: true });
+                    item.addEventListener("mousedown", startPress);
+                    item.addEventListener("mouseup", clearPress);
+                    item.addEventListener("mouseleave", clearPress);
+
                     container.appendChild(item);
                     currentStartTime += durationMs;
                 });
+
+                if (finalEndTimeObj) {
+                    let h = finalEndTimeObj.getHours();
+                    let m = finalEndTimeObj.getMinutes();
+                    const ampm = h >= 12 ? 'PM' : 'AM';
+                    h = h % 12 || 12;
+                    m = m < 10 ? '0' + m : m;
+                    document.getElementById("timeline-ends-at-display").innerText = `Ends at ${h}:${m} ${ampm}`;
+                } else {
+                    document.getElementById("timeline-ends-at-display").innerText = "";
+                }
+
+                let scheduledMins = 0;
+                let completedMins = 0;
+                targetDateTasks.forEach(t => {
+                    if (!t.isBreak) {
+                        const durationMins = (t.hours * 60) + t.minutes;
+                        scheduledMins += durationMins;
+                        if(t.completed) completedMins += durationMins;
+                    }
+                });
+                this.syncTimelineProgressBar(scheduledMins, completedMins);
+            },
+
+            syncTimelineProgressBar(scheduledMins, completedMins) {
+                const progressTextRatio = document.getElementById("timeline-progress-text-ratio");
+                const progressTextPercent = document.getElementById("timeline-progress-text-percent");
+                const progressBarFill = document.getElementById("timeline-progress-bar-fill");
+
+                progressTextRatio.innerText = `${Utils.formatHoursMins(completedMins)} / ${Utils.formatHoursMins(scheduledMins)}`;
+                
+                let percent = 0;
+                if(scheduledMins > 0) {
+                    percent = Math.round((completedMins / scheduledMins) * 100);
+                }
+                progressTextPercent.innerText = `${percent}%`;
+                progressBarFill.style.width = `${percent}%`;
             }
         };
 
-        // Cross-Device High Performance Drag and Drop Engine
         const DragDropEngine = {
             activeDragElement: null,
 
@@ -2071,7 +2140,6 @@
                 DragDropEngine.commitNewSortOrder();
             },
 
-            // Native Core Structural Logic Calculation Engine Mapping Intersections
             getDragAfterElement(container, yCoordinate) {
                 const draggableElements = [...container.querySelectorAll('.task-card:not(.dragging)')];
                 
@@ -2086,7 +2154,6 @@
                 }, { offset: Number.NEGATIVE_INFINITY }).element;
             },
 
-            // Precise Touch Interception Lifecycles Vectors
             handleTouchStart(e) {
                 const card = this.closest(".task-card");
                 DragDropEngine.activeDragElement = card;
@@ -2094,7 +2161,7 @@
             },
 
             handleTouchMove(e) {
-                e.preventDefault(); // Lock downstream physical viewport structural scrolling loops
+                e.preventDefault(); 
                 if(!DragDropEngine.activeDragElement) return;
 
                 const touchLocation = e.touches[0];
@@ -2128,20 +2195,16 @@
                     }
                 });
 
-                // Re-align historical array elements data structures safely
                 State.save();
                 RenderEngine.fullRender();
             }
         };
 
-        // Wire Event Listeners to Layout Containers Elements Viewports
         function setupDOMEventListeners() {
-            // Setup Global Body Intercept clicks rule to dismiss active dropdown modules panels instantly
             document.body.addEventListener("click", () => {
                 document.querySelectorAll(".menu-dropdown").forEach(m => m.classList.remove("active"));
             });
 
-            // Planning Time Control Listeners
             document.getElementById("planning-time-picker").onchange = function() {
                 if (this.value) {
                     State.planningStartTime = this.value;
@@ -2155,7 +2218,6 @@
                 RenderEngine.fullRender();
             };
 
-            // Dashboard Focus Mode Toggle — tap-safe (won't fire during a swipe)
             const dashboardWrap = document.getElementById("dashboard-card-wrap");
             let dashTouchStartX = 0;
             let dashTouchStartY = 0;
@@ -2173,35 +2235,32 @@
                 }
             }, { passive: true });
             dashboardWrap.addEventListener("click", () => {
-                // Desktop mouse click only — skip if triggered by touch (browser fires click after touchend)
                 if (dashWasTouched) { dashWasTouched = false; return; }
                 Actions.toggleDashboardFocus();
             });
 
-            // Date Slider Mechanics Switches
             document.getElementById("prev-day-btn").onclick = () => Actions.changeDateDelta(-1);
             document.getElementById("next-day-btn").onclick = () => Actions.changeDateDelta(1);
 
-            // Modals Core Architecture Operations Triggers
             document.getElementById("fab-add-task").onclick = () => Actions.openTaskModal();
             document.getElementById("form-cancel-btn").onclick = () => Actions.closeTaskModal();
             document.getElementById("task-mutation-form").onsubmit = (e) => Actions.submitTaskForm(e);
 
-            // Quick Add Event Processing Subroutine Loops
+            document.getElementById("custom-cancel-btn").onclick = () => {
+                document.getElementById("customization-modal").classList.remove("active");
+            };
+
             document.getElementById("quick-add-field").onkeydown = (e) => Actions.handleQuickAdd(e);
 
-            // Completed Section Collapsible Toggle Mechanics
             document.getElementById("completed-trigger").onclick = function() {
                 this.classList.toggle("collapsed");
                 document.getElementById("completed-tasks-container").classList.toggle("collapsed");
             };
 
-            // Migration Controls Linkage Points Configuration Layouts
             document.getElementById("migrate-move-btn").onclick = () => Actions.executeMigration("move");
             document.getElementById("migrate-keep-btn").onclick = () => Actions.executeMigration("keep");
             document.getElementById("migrate-complete-btn").onclick = () => Actions.executeMigration("complete");
 
-            // Desktop Context Desktop Drag Interceptions Router
             const activeContainer = document.getElementById("active-tasks-container");
             activeContainer.addEventListener("dragover", (e) => {
                 e.preventDefault();
@@ -2215,7 +2274,6 @@
                 }
             });
 
-            // Interface Fullscreen Screen Transition Routing System Engine
             document.getElementById("open-timeline-btn").onclick = () => {
                 RenderEngine.renderTimelineEngine();
                 document.getElementById("timeline-screen").classList.add("active");
@@ -2243,7 +2301,6 @@
                 RenderEngine.fullRender();
             };
 
-            // Calendar Navigation Controls Mapping Links Rules
             document.getElementById("cal-prev-month").onclick = () => {
                 State.calendarMonth--;
                 if(State.calendarMonth < 0) {
@@ -2262,27 +2319,23 @@
             };
         }
 
-        // Swipe Navigation Engine — Main Screen & Calendar Screen
         const SwipeEngine = {
-            // Shared state
             touchStartX: 0,
             touchStartY: 0,
             touchStartTime: 0,
             isSwiping: false,
-            swipeTarget: null, // 'main' | 'calendar'
+            swipeTarget: null, 
 
-            SWIPE_THRESHOLD: 50,       // min horizontal px to count as swipe
-            ANGLE_THRESHOLD: 35,       // max degrees from horizontal to be considered horizontal
-            MAX_DURATION: 600,         // max ms for a swipe gesture
+            SWIPE_THRESHOLD: 50,       
+            ANGLE_THRESHOLD: 35,       
+            MAX_DURATION: 600,         
 
             init() {
-                // Main content area (everything except overlays)
                 const mainArea = document.querySelector('.container');
                 mainArea.addEventListener('touchstart', (e) => SwipeEngine.onStart(e, 'main'), { passive: true });
                 mainArea.addEventListener('touchmove', (e) => SwipeEngine.onMove(e, 'main'), { passive: false });
                 mainArea.addEventListener('touchend', (e) => SwipeEngine.onEnd(e, 'main'), { passive: true });
 
-                // Calendar screen
                 const calScreen = document.getElementById('calendar-screen');
                 calScreen.addEventListener('touchstart', (e) => SwipeEngine.onStart(e, 'calendar'), { passive: true });
                 calScreen.addEventListener('touchmove', (e) => SwipeEngine.onMove(e, 'calendar'), { passive: false });
@@ -2290,19 +2343,10 @@
             },
 
             onStart(e, target) {
-                // Ignore multi-touch
                 if (e.touches.length !== 1) return;
-
-                // Don't interfere if a drag is in progress
                 if (DragDropEngine.activeDragElement) return;
-
-                // Don't swipe if a modal is open
                 if (document.querySelector('.modal-overlay.active')) return;
-
-                // Don't swipe if settings screen is open
                 if (document.getElementById('settings-screen').classList.contains('active')) return;
-
-                // For main screen swipes, only trigger when calendar is NOT open
                 if (target === 'main' && document.getElementById('calendar-screen').classList.contains('active')) return;
 
                 const touch = e.touches[0];
@@ -2322,13 +2366,10 @@
                 const dx = touch.clientX - SwipeEngine.touchStartX;
                 const dy = touch.clientY - SwipeEngine.touchStartY;
 
-                // Calculate angle from horizontal
                 const angle = Math.abs(Math.atan2(Math.abs(dy), Math.abs(dx)) * 180 / Math.PI);
 
-                // If clearly more vertical than horizontal, let it scroll — don't claim this gesture
                 if (angle > SwipeEngine.ANGLE_THRESHOLD && !SwipeEngine.isSwiping) return;
 
-                // If we've determined it's horizontal, mark as swiping and prevent scroll
                 if (Math.abs(dx) > 10 && angle <= SwipeEngine.ANGLE_THRESHOLD) {
                     SwipeEngine.isSwiping = true;
                 }
@@ -2351,7 +2392,6 @@
                 const dy = changedTouch.clientY - SwipeEngine.touchStartY;
                 const angle = Math.abs(Math.atan2(Math.abs(dy), Math.abs(dx)) * 180 / Math.PI);
 
-                // Must meet threshold and angle requirements
                 if (Math.abs(dx) < SwipeEngine.SWIPE_THRESHOLD) return;
                 if (angle > SwipeEngine.ANGLE_THRESHOLD) return;
 
@@ -2367,9 +2407,9 @@
 
             triggerMainSwipe(dx) {
                 if (dx < 0) {
-                    Actions.changeDateDelta(1);  // swipe left → next day
+                    Actions.changeDateDelta(1);  
                 } else {
-                    Actions.changeDateDelta(-1); // swipe right → prev day
+                    Actions.changeDateDelta(-1); 
                 }
             },
 
@@ -2385,14 +2425,12 @@
 
                 setTimeout(() => {
                     if (dx < 0) {
-                        // swipe left → next month (same as cal-next-month button)
                         State.calendarMonth++;
                         if (State.calendarMonth > 11) {
                             State.calendarMonth = 0;
                             State.calendarYear++;
                         }
                     } else {
-                        // swipe right → prev month (same as cal-prev-month button)
                         State.calendarMonth--;
                         if (State.calendarMonth < 0) {
                             State.calendarMonth = 11;
@@ -2417,7 +2455,6 @@
             }
         };
 
-        // Global Orchestration Initialization Lifecycle System Execution Step
         window.addEventListener("DOMContentLoaded", () => {
             State.load();
             Actions.switchTheme(State.theme);
@@ -2425,18 +2462,17 @@
             SwipeEngine.init();
             RenderEngine.fullRender();
             
-            // Queue critical workspace asset pipeline processing checks
             setTimeout(() => {
                 Actions.checkMigrationRoutine();
             }, 400);
         });
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-            .then((registration) => console.log('Service Worker registered with scope:', registration.scope))
-            .catch((error) => console.error('Service Worker registration failed:', error));
-    });
-}
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then((registration) => console.log('Service Worker registered with scope:', registration.scope))
+                    .catch((error) => console.error('Service Worker registration failed:', error));
+            });
+        }
     </script>
 </body>
 </html>
