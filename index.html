@@ -4,6 +4,7 @@
 <link rel="manifest" href="./manifest.json">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" id="theme-color-meta" content="#F5F0E6">
     <title>Premium Todo App</title>
     <style>
         :root {
@@ -1356,6 +1357,19 @@
             switchTheme(themeName) {
                 State.theme = themeName;
                 document.documentElement.setAttribute("data-theme", themeName);
+                
+                // Dynamically update the header/status bar color
+                const themeColors = {
+                    'beige': '#F5F0E6',
+                    'cloud': '#F3F4F6',
+                    'sepia': '#EAE6D9',
+                    'obsidian': '#1E1E1E',
+                    'amoled': '#000000'
+                };
+                const metaThemeColor = document.getElementById('theme-color-meta');
+                if (metaThemeColor) {
+                    metaThemeColor.setAttribute('content', themeColors[themeName]);
+                }
                 
                 // Clear the active state from all theme buttons
                 document.querySelectorAll('.theme-btn').forEach(btn => {
