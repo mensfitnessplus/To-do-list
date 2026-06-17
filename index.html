@@ -296,10 +296,12 @@
 
         .quick-add-container {
             margin-bottom: 24px;
+            display: flex;
+            gap: 8px;
         }
 
         .quick-add-input {
-            width: 100%;
+            flex-grow: 1;
             background: var(--card);
             border: 1px solid var(--border);
             color: var(--text);
@@ -387,6 +389,10 @@
         .task-card.break-task .task-title {
             color: var(--text-muted);
             font-style: italic;
+        }
+
+        .task-card.fixed-task {
+            border-left: 4px solid var(--accent-dark);
         }
 
         .drag-handle {
@@ -742,6 +748,8 @@
         .timeline-time { width: 65px; font-size: 12px; font-weight: 700; color: var(--text-muted); text-align: right; flex-shrink: 0; padding-top: 4px; }
         .timeline-content { flex-grow: 1; background: var(--card); border-left: 4px solid var(--accent); padding: 10px 12px; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; box-shadow: var(--shadow); position: relative; }
         .timeline-content.break-timeline { border-left-color: var(--text-muted); background: var(--bg); opacity: 0.8; border: 1px dashed var(--text-muted); border-left: 4px solid var(--text-muted); }
+        .timeline-content.fixed-timeline { border-left-style: double; border-left-width: 6px; border-left-color: var(--accent-dark); }
+        
         .timeline-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
         .timeline-duration { font-size: 11px; color: var(--text-muted); }
 
@@ -944,6 +952,18 @@
             color: var(--text);
             letter-spacing: -0.5px;
         }
+
+        .bulk-action-bar {
+            position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+            background: var(--card); border: 1px solid var(--accent); border-radius: var(--radius-lg);
+            padding: 12px 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); z-index: 85;
+            display: none; align-items: center; gap: 12px; transition: var(--transition);
+        }
+        .bulk-action-bar.active { display: flex; }
+        .bulk-checkbox {
+            width: 20px; height: 20px; cursor: pointer; accent-color: var(--accent);
+            margin-right: 8px; flex-shrink: 0; border-radius: 4px;
+        }
     </style>
 </head>
 <body>
@@ -1021,7 +1041,10 @@
         </div>
 
         <div class="quick-add-container">
-            <input type="text" class="quick-add-input" id="quick-add-field" placeholder="Quick Add Task (e.g. Study Accounting 2h 30m)">
+            <input type="text" class="quick-add-input" id="quick-add-field" placeholder="Quick Add Task (e.g. Study 2h 30m)">
+            <button class="icon-btn" id="open-bulk-add-btn" title="Bulk Add" style="flex-shrink: 0; width: 48px;">
+                <svg viewBox="0 0 24 24"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
+            </button>
         </div>
 
         <div id="overdue-section-wrapper" style="display: none;">
@@ -1046,6 +1069,15 @@
 
     </div>
 
+    <!-- Bulk Action Floating Bar -->
+    <div id="bulk-action-bar" class="bulk-action-bar">
+        <span id="bulk-select-count" style="font-weight:700; font-size:14px; color:var(--text);">0 selected</span>
+        <button class="btn btn-primary" style="padding:8px 12px; font-size:12px;" onclick="Actions.bulkAction('complete')">Complete</button>
+        <button class="btn btn-text" style="padding:8px 12px; font-size:12px; background:var(--border);" onclick="Actions.bulkAction('incomplete')">Undo</button>
+        <button class="btn btn-danger" style="padding:8px 12px; font-size:12px;" onclick="Actions.bulkAction('delete')">Delete</button>
+        <button class="btn btn-text" style="padding:8px 12px; font-size:12px;" onclick="Actions.clearBulkSelect()">Cancel</button>
+    </div>
+
     <button class="fab" id="fab-add-task" title="Add Task">
         <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
     </button>
@@ -1059,7 +1091,20 @@
                     <label for="form-task-text">Task Title *</label>
                     <input type="text" id="form-task-text" class="form-input" required placeholder="e.g. Review Economics notes">
                 </div>
+                
                 <div class="form-group">
+                    <label style="display:flex; align-items:center; gap:8px; text-transform:none; cursor:pointer;">
+                        <input type="checkbox" id="form-task-is-break" class="bulk-checkbox"> Set as Break / Label Task
+                    </label>
+                </div>
+                
+                <div class="form-group">
+                    <label style="display:flex; align-items:center; gap:8px; text-transform:none; cursor:pointer;">
+                        <input type="checkbox" id="form-task-is-fixed" class="bulk-checkbox" onchange="document.getElementById('duration-inputs-wrap').style.display=this.checked?'none':'block'; document.getElementById('fixed-time-inputs-wrap').style.display=this.checked?'block':'none';"> Fixed Time Schedule (e.g. 1PM - 2PM)
+                    </label>
+                </div>
+
+                <div class="form-group" id="duration-inputs-wrap">
                     <label>Duration</label>
                     <div class="duration-inputs">
                         <div>
@@ -1072,6 +1117,21 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="form-group" id="fixed-time-inputs-wrap" style="display:none;">
+                    <label>Static Time Slot</label>
+                    <div class="duration-inputs">
+                        <div>
+                            <label for="form-task-fixed-start" style="font-size: 11px;">Start Time</label>
+                            <input type="time" id="form-task-fixed-start" class="form-input">
+                        </div>
+                        <div>
+                            <label for="form-task-fixed-end" style="font-size: 11px;">End Time</label>
+                            <input type="time" id="form-task-fixed-end" class="form-input">
+                        </div>
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label for="form-task-date">Scheduled Date</label>
                     <input type="date" id="form-task-date" class="form-input" required>
@@ -1081,6 +1141,20 @@
                     <button type="submit" class="btn btn-primary" id="form-save-btn">Save</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="bulk-add-modal">
+        <div class="modal-card">
+            <div class="modal-title">Bulk Add Tasks</div>
+            <div class="form-group">
+                <label>Enter Multiple Tasks (One per line)</label>
+                <textarea id="bulk-add-textarea" class="form-input" rows="8" placeholder="Cost 2h&#10;Audit 3h"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-text" onclick="document.getElementById('bulk-add-modal').classList.remove('active')">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="Actions.submitBulkAdd()">Add All</button>
+            </div>
         </div>
     </div>
 
@@ -1217,6 +1291,10 @@
     </div>
 
     <script>
+        window.BulkState = {
+            selectedIds: new Set()
+        };
+
         const State = {
             tasks: [],
             selectedDate: "", 
@@ -1226,7 +1304,8 @@
             calendarMonth: 5, 
             planningStartTime: null, 
             dashboardCollapsed: false, 
-            customStyles: {}, // Keyed by task.id -> { color: hex, emoji: string }
+            customStyles: {}, 
+            lastView: "main",
             
             save() {
                 localStorage.setItem("todo_app_tasks", JSON.stringify(this.tasks));
@@ -1236,6 +1315,7 @@
                 localStorage.setItem("todo_app_planningTime", this.planningStartTime || "");
                 localStorage.setItem("todo_app_dashboardCollapsed", this.dashboardCollapsed);
                 localStorage.setItem("todo_app_customStyles", JSON.stringify(this.customStyles));
+                localStorage.setItem("todo_app_lastView", this.lastView);
             },
             
             load() {
@@ -1262,6 +1342,9 @@
 
                 const cachedStyles = localStorage.getItem("todo_app_customStyles");
                 if(cachedStyles) this.customStyles = JSON.parse(cachedStyles);
+
+                const cachedLastView = localStorage.getItem("todo_app_lastView");
+                if(cachedLastView) this.lastView = cachedLastView;
 
                 const parts = this.selectedDate.split("-");
                 this.calendarYear = parseInt(parts[0], 10);
@@ -1322,39 +1405,6 @@
 
                 return { text, hours, minutes };
             },
-            getFinishTimeEstimationStr(remainingMinutes, totalMinutesWithBreaks) {
-                let actualMinutesToShift = totalMinutesWithBreaks !== undefined ? totalMinutesWithBreaks : remainingMinutes;
-                if (actualMinutesToShift <= 0) return "🕒 Finish By: No remaining work";
-                
-                let baseDate = Utils.getCalculatedBaseDate();
-                const targetTime = new Date(baseDate.getTime() + actualMinutesToShift * 60000);
-                
-                let hours = targetTime.getHours();
-                const minutes = targetTime.getMinutes();
-                const ampm = hours >= 12 ? 'PM' : 'AM';
-                hours = hours % 12 || 12;
-                const minStr = minutes < 10 ? '0' + minutes : minutes;
-                const timeStr = `${hours}:${minStr} ${ampm}`;
-
-                const todayStr = this.getTodayString();
-                const targetDateStr = this.formatDateIso(targetTime);
-
-                if (State.selectedDate === todayStr) {
-                    const tomorrow = new Date(baseDate);
-                    tomorrow.setDate(tomorrow.getDate() + 1);
-                    const tomorrowStr = this.formatDateIso(tomorrow);
-
-                    if (targetDateStr === todayStr) {
-                        return `🕒 Finish By: Today ${timeStr}`;
-                    } else if (targetDateStr === tomorrowStr) {
-                        return `🕒 Finish By: Tomorrow ${timeStr}`;
-                    }
-                } 
-
-                const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                const smartDateOutput = `${targetTime.getDate()} ${monthNames[targetTime.getMonth()]}`;
-                return `🕒 Finish By: ${smartDateOutput}, ${timeStr}`;
-            },
             getFriendlyDateLabel(isoString) {
                 if(isoString === this.getTodayString()) return "Today";
                 const parts = isoString.split("-");
@@ -1392,6 +1442,82 @@
                     }
                 }
                 return baseDate;
+            }
+        };
+
+        const ScheduleEngine = {
+            getChunksForDate(dateStr) {
+                const targetDateTasks = State.tasks.filter(t => t.date === dateStr);
+                const activeFlex = targetDateTasks.filter(t => !t.completed && !t.isFixed);
+                const allFixed = targetDateTasks.filter(t => t.isFixed);
+
+                const fixedIntervals = allFixed.map(t => {
+                    const startMs = new Date(`${dateStr}T${t.fixedStart}:00`).getTime();
+                    let endMs = new Date(`${dateStr}T${t.fixedEnd}:00`).getTime();
+                    if (endMs <= startMs) endMs += 24 * 60 * 60 * 1000;
+                    return { task: t, startMs, endMs };
+                }).sort((a,b) => a.startMs - b.startMs);
+
+                const mergedFixed = [];
+                let currentInterval = null;
+                fixedIntervals.forEach(fi => {
+                    if (!currentInterval) {
+                        currentInterval = { startMs: fi.startMs, endMs: fi.endMs, tasks: [fi.task] };
+                    } else {
+                        if (fi.startMs <= currentInterval.endMs) {
+                            currentInterval.endMs = Math.max(currentInterval.endMs, fi.endMs);
+                            currentInterval.tasks.push(fi.task);
+                        } else {
+                            mergedFixed.push(currentInterval);
+                            currentInterval = { startMs: fi.startMs, endMs: fi.endMs, tasks: [fi.task] };
+                        }
+                    }
+                });
+                if (currentInterval) mergedFixed.push(currentInterval);
+
+                let baseDate = Utils.getCalculatedBaseDate();
+                let currentMs = baseDate.getTime();
+                let chunks = [];
+
+                activeFlex.sort((a,b) => a.order - b.order).forEach(t => {
+                    let remMs = ((t.hours || 0) * 60 + (t.minutes || 0)) * 60000;
+                    
+                    while (remMs > 0) {
+                        let insideFixed = mergedFixed.find(f => currentMs >= f.startMs && currentMs < f.endMs);
+                        if (insideFixed) {
+                            currentMs = insideFixed.endMs;
+                            continue;
+                        }
+
+                        let nextFixed = mergedFixed.find(f => f.startMs > currentMs);
+                        let allowedMs = nextFixed ? nextFixed.startMs - currentMs : Infinity;
+
+                        let chunkMs = Math.min(remMs, allowedMs);
+                        
+                        chunks.push({
+                            task: t,
+                            start: new Date(currentMs),
+                            end: new Date(currentMs + chunkMs),
+                            isChunk: chunkMs < ((t.hours||0)*60+(t.minutes||0))*60000
+                        });
+
+                        currentMs += chunkMs;
+                        remMs -= chunkMs;
+                    }
+                });
+
+                const activeFixedIntervals = fixedIntervals.filter(f => !f.task.completed);
+                activeFixedIntervals.forEach(f => {
+                    chunks.push({
+                        task: f.task,
+                        start: new Date(f.startMs),
+                        end: new Date(f.endMs),
+                        isChunk: false
+                    });
+                });
+
+                chunks.sort((a,b) => a.start.getTime() - b.start.getTime());
+                return chunks;
             }
         };
 
@@ -1438,6 +1564,7 @@
                 State.calendarYear = current.getFullYear();
                 State.calendarMonth = current.getMonth();
                 State.save();
+                Actions.clearBulkSelect();
                 RenderEngine.fullRender();
             },
 
@@ -1452,15 +1579,25 @@
                     if(task) {
                         document.getElementById("form-task-id").value = task.id;
                         document.getElementById("form-task-text").value = task.text;
-                        document.getElementById("form-task-hours").value = task.hours;
-                        document.getElementById("form-task-minutes").value = task.minutes;
+                        document.getElementById("form-task-hours").value = task.hours || 0;
+                        document.getElementById("form-task-minutes").value = task.minutes || 0;
                         document.getElementById("form-task-date").value = task.date;
+                        document.getElementById("form-task-is-break").checked = !!task.isBreak;
+                        document.getElementById("form-task-is-fixed").checked = !!task.isFixed;
+                        if(task.isFixed) {
+                            document.getElementById("form-task-fixed-start").value = task.fixedStart || "";
+                            document.getElementById("form-task-fixed-end").value = task.fixedEnd || "";
+                        }
                     }
                 } else {
                     document.getElementById("modal-form-title").innerText = "Create Task";
                     document.getElementById("form-task-id").value = "";
                     document.getElementById("form-task-date").value = State.selectedDate;
                 }
+                
+                document.getElementById('duration-inputs-wrap').style.display = document.getElementById("form-task-is-fixed").checked ? 'none' : 'block';
+                document.getElementById('fixed-time-inputs-wrap').style.display = document.getElementById("form-task-is-fixed").checked ? 'block' : 'none';
+
                 overlay.classList.add("active");
             },
 
@@ -1511,11 +1648,29 @@
                 e.preventDefault();
                 const id = document.getElementById("form-task-id").value;
                 const text = document.getElementById("form-task-text").value.trim();
-                const hours = Math.max(0, parseInt(document.getElementById("form-task-hours").value, 10) || 0);
-                const minutes = Math.max(0, parseInt(document.getElementById("form-task-minutes").value, 10) || 0);
+                let hours = Math.max(0, parseInt(document.getElementById("form-task-hours").value, 10) || 0);
+                let minutes = Math.max(0, parseInt(document.getElementById("form-task-minutes").value, 10) || 0);
                 const date = document.getElementById("form-task-date").value;
+                
+                const isBreak = document.getElementById("form-task-is-break").checked;
+                const isFixed = document.getElementById("form-task-is-fixed").checked;
+                const fixedStart = document.getElementById("form-task-fixed-start").value;
+                const fixedEnd = document.getElementById("form-task-fixed-end").value;
 
                 if(!text) return;
+                
+                if (isFixed) {
+                    if (!fixedStart || !fixedEnd) {
+                        alert("Please provide both Start and End times for a fixed schedule.");
+                        return;
+                    }
+                    const sTime = new Date(`1970-01-01T${fixedStart}:00`);
+                    let eTime = new Date(`1970-01-01T${fixedEnd}:00`);
+                    if (eTime <= sTime) eTime.setDate(eTime.getDate() + 1);
+                    const diffMins = Math.floor((eTime - sTime) / 60000);
+                    hours = Math.floor(diffMins / 60);
+                    minutes = diffMins % 60;
+                }
 
                 if(id) {
                     const task = State.tasks.find(t => t.id === id);
@@ -1524,6 +1679,10 @@
                         task.hours = hours;
                         task.minutes = minutes;
                         task.date = date;
+                        task.isBreak = isBreak;
+                        task.isFixed = isFixed;
+                        task.fixedStart = fixedStart;
+                        task.fixedEnd = fixedEnd;
                     }
                 } else {
                     const targetDateTasks = State.tasks.filter(t => t.date === date);
@@ -1535,6 +1694,10 @@
                         hours: hours,
                         minutes: minutes,
                         completed: false,
+                        isBreak: isBreak,
+                        isFixed: isFixed,
+                        fixedStart: fixedStart,
+                        fixedEnd: fixedEnd,
                         createdAt: Date.now(),
                         order: orderIndex
                     };
@@ -1544,6 +1707,48 @@
                 State.save();
                 Actions.closeTaskModal();
                 RenderEngine.fullRender();
+            },
+
+            submitBulkAdd() {
+                const textArea = document.getElementById("bulk-add-textarea");
+                const lines = textArea.value.split('\n');
+                
+                const targetTasks = State.tasks.filter(t => t.date === State.selectedDate);
+                let orderIndex = targetTasks.length;
+
+                let addedCount = 0;
+                lines.forEach(line => {
+                    let rawVal = line.trim();
+                    if(rawVal) {
+                        let isBreak = false;
+                        if (rawVal.startsWith('/') || rawVal.startsWith('\\')) {
+                            isBreak = true;
+                            rawVal = rawVal.substring(1).trim();
+                        }
+
+                        const parsed = Utils.parseQuickAdd(rawVal);
+                        
+                        State.tasks.push({
+                            id: Utils.generateUUID(),
+                            text: parsed.text,
+                            date: State.selectedDate,
+                            hours: parsed.hours,
+                            minutes: parsed.minutes,
+                            completed: false,
+                            isBreak: isBreak,
+                            createdAt: Date.now(),
+                            order: orderIndex++
+                        });
+                        addedCount++;
+                    }
+                });
+
+                if(addedCount > 0) {
+                    State.save();
+                    textArea.value = "";
+                    document.getElementById('bulk-add-modal').classList.remove('active');
+                    RenderEngine.fullRender();
+                }
             },
 
             toggleTaskCompletion(taskId) {
@@ -1600,6 +1805,7 @@
                 if(confirm("Are you sure you want to permanently delete this task?")) {
                     State.tasks = State.tasks.filter(t => t.id !== taskId);
                     if(State.customStyles[taskId]) delete State.customStyles[taskId];
+                    window.BulkState.selectedIds.delete(taskId);
                     State.save();
                     RenderEngine.fullRender();
                 }
@@ -1637,6 +1843,52 @@
                     inputField.value = "";
                     RenderEngine.fullRender();
                 }
+            },
+
+            toggleBulkSelect(taskId) {
+                if (window.BulkState.selectedIds.has(taskId)) {
+                    window.BulkState.selectedIds.delete(taskId);
+                } else {
+                    window.BulkState.selectedIds.add(taskId);
+                }
+                this.updateBulkActionBar();
+            },
+
+            clearBulkSelect() {
+                window.BulkState.selectedIds.clear();
+                this.updateBulkActionBar();
+                RenderEngine.fullRender();
+            },
+
+            updateBulkActionBar() {
+                const bar = document.getElementById("bulk-action-bar");
+                const count = document.getElementById("bulk-select-count");
+                if (window.BulkState.selectedIds.size > 0) {
+                    count.innerText = `${window.BulkState.selectedIds.size} selected`;
+                    bar.classList.add("active");
+                } else {
+                    bar.classList.remove("active");
+                }
+            },
+
+            bulkAction(action) {
+                const ids = Array.from(window.BulkState.selectedIds);
+                if(ids.length === 0) return;
+
+                if (action === 'delete') {
+                    if(!confirm(`Delete ${ids.length} selected tasks?`)) return;
+                    State.tasks = State.tasks.filter(t => !ids.includes(t.id));
+                    ids.forEach(id => { if(State.customStyles[id]) delete State.customStyles[id]; });
+                } else if (action === 'complete') {
+                    State.tasks.forEach(t => { if(ids.includes(t.id)) t.completed = true; });
+                } else if (action === 'incomplete') {
+                    State.tasks.forEach(t => { if(ids.includes(t.id)) t.completed = false; });
+                }
+
+                window.BulkState.selectedIds.clear();
+                this.updateBulkActionBar();
+                State.save();
+                RenderEngine.fullRender();
             },
 
             checkMigrationRoutine() {
@@ -1730,7 +1982,9 @@
                 this.renderDashboardMetrics();
                 this.renderTaskListsEngine();
                 this.renderCalendarEngine();
-                this.renderTimelineEngine();
+                if(document.getElementById("timeline-screen").classList.contains("active")) {
+                    this.renderTimelineEngine();
+                }
             },
 
             renderMetadataHeaders() {
@@ -1745,19 +1999,12 @@
                 
                 let scheduledMins = 0;
                 let completedMins = 0;
-                let totalUncompletedMinsWithBreaks = 0;
-
-                let baseDate = Utils.getCalculatedBaseDate();
-                let runningTimeMs = baseDate.getTime();
 
                 targetDateTasks.sort((a, b) => a.order - b.order).forEach(t => {
                     const durationMins = (t.hours * 60) + t.minutes;
                     if (!t.isBreak) {
                         scheduledMins += durationMins;
                         if(t.completed) completedMins += durationMins;
-                    }
-                    if(!t.completed) {
-                        totalUncompletedMinsWithBreaks += durationMins;
                     }
                 });
 
@@ -1780,7 +2027,39 @@
                     modeLabel.innerText = "Now";
                 }
 
-                document.getElementById("estimation-time-output").innerText = Utils.getFinishTimeEstimationStr(scheduledMins - completedMins, totalUncompletedMinsWithBreaks);
+                const chunks = ScheduleEngine.getChunksForDate(State.selectedDate);
+                let finishTimeStr = "🕒 Finish By: No remaining work";
+                if(chunks.length > 0 && (scheduledMins - completedMins > 0 || targetDateTasks.some(t => t.isFixed && !t.completed))) {
+                    const lastChunkEnd = chunks[chunks.length - 1].end;
+                    let hours = lastChunkEnd.getHours();
+                    const minutes = lastChunkEnd.getMinutes();
+                    const ampm = hours >= 12 ? 'PM' : 'AM';
+                    hours = hours % 12 || 12;
+                    const minStr = minutes < 10 ? '0' + minutes : minutes;
+                    const timeStr = `${hours}:${minStr} ${ampm}`;
+
+                    const todayStr = Utils.getTodayString();
+                    const targetDateStr = Utils.formatDateIso(lastChunkEnd);
+
+                    if (State.selectedDate === todayStr) {
+                        let baseDate = Utils.getCalculatedBaseDate();
+                        const tomorrow = new Date(baseDate);
+                        tomorrow.setDate(tomorrow.getDate() + 1);
+                        const tomorrowStr = Utils.formatDateIso(tomorrow);
+
+                        if (targetDateStr === todayStr) {
+                            finishTimeStr = `🕒 Finish By: Today ${timeStr}`;
+                        } else if (targetDateStr === tomorrowStr) {
+                            finishTimeStr = `🕒 Finish By: Tomorrow ${timeStr}`;
+                        } else {
+                             const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                             finishTimeStr = `🕒 Finish By: ${lastChunkEnd.getDate()} ${monthNames[lastChunkEnd.getMonth()]}, ${timeStr}`;
+                        }
+                    } else {
+                        finishTimeStr = `🕒 Finish By: ${timeStr}`;
+                    }
+                }
+                document.getElementById("estimation-time-output").innerText = finishTimeStr;
 
                 const progressTextRatio = document.getElementById("progress-text-ratio");
                 const progressTextPercent = document.getElementById("progress-text-percent");
@@ -1824,18 +2103,34 @@
 
             buildTaskCardElement(task, isOverdueContext = false, deadlineStr = "") {
                 const card = document.createElement("div");
-                card.className = `task-card ${task.completed ? 'completed-task' : ''} ${task.isBreak ? 'break-task' : ''}`;
+                card.className = `task-card ${task.completed ? 'completed-task' : ''} ${task.isBreak ? 'break-task' : ''} ${task.isFixed ? 'fixed-task' : ''}`;
                 card.id = task.id;
                 card.setAttribute("data-order", task.order);
 
                 const totalMins = (task.hours * 60) + task.minutes;
-                const durationLabel = Utils.formatHoursMins(totalMins);
-                const deadlineHtml = deadlineStr ? `<span style="margin-left: 4px; font-weight: 700; color: var(--accent-dark);">(${deadlineStr})</span>` : "";
+                let durationLabel = Utils.formatHoursMins(totalMins);
+                
+                const formatTime12 = (time24) => {
+                    const [h, m] = time24.split(':').map(Number);
+                    const ampm = h >= 12 ? 'PM' : 'AM';
+                    let h12 = h % 12 || 12;
+                    let mStr = m < 10 ? '0'+m : m;
+                    return `${h12}:${mStr} ${ampm}`;
+                };
+
+                if (task.isFixed) {
+                    durationLabel = `${formatTime12(task.fixedStart)} - ${formatTime12(task.fixedEnd)} (${durationLabel})`;
+                }
+
+                const deadlineHtml = deadlineStr && !task.isFixed ? `<span style="margin-left: 4px; font-weight: 700; color: var(--accent-dark);">(${deadlineStr})</span>` : "";
 
                 let customStyle = State.customStyles[task.id] || { color: "", emoji: "" };
                 let displayTitle = (customStyle.emoji ? customStyle.emoji + " " : "") + task.text;
 
+                const isSelected = window.BulkState.selectedIds.has(task.id);
+
                 card.innerHTML = `
+                    <input type="checkbox" class="bulk-checkbox" onchange="Actions.toggleBulkSelect('${task.id}')" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation()">
                     ${(!task.completed && !isOverdueContext) ? `
                     <div class="drag-handle" title="Drag to reorder">
                         <svg viewBox="0 0 24 24"><path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
@@ -1910,23 +2205,26 @@
                 const targetDateTasks = State.tasks.filter(t => t.date === State.selectedDate);
                 targetDateTasks.sort((a,b) => a.order - b.order);
 
+                const chunks = ScheduleEngine.getChunksForDate(State.selectedDate);
+                const deadlineMap = {};
+                chunks.forEach(c => { deadlineMap[c.task.id] = c.end; });
+
                 let activeCounter = 0;
                 let completedCounter = 0;
 
-                let baseDate = Utils.getCalculatedBaseDate();
-                let runningMinutes = 0;
-
                 targetDateTasks.forEach(t => {
                     if(!t.completed) {
-                        const taskMins = (t.hours * 60) + t.minutes;
-                        runningMinutes += taskMins;
-                        const deadlineTime = new Date(baseDate.getTime() + runningMinutes * 60000);
-                        let hrs = deadlineTime.getHours();
-                        const mins = deadlineTime.getMinutes();
-                        const ampm = hrs >= 12 ? 'PM' : 'AM';
-                        hrs = hrs % 12 || 12;
-                        const minStr = mins < 10 ? '0' + mins : mins;
-                        const deadlineStr = `${hrs}:${minStr} ${ampm}`;
+                        let deadlineStr = "";
+                        const endObj = deadlineMap[t.id];
+                        if(endObj) {
+                            let hrs = endObj.getHours();
+                            const mins = endObj.getMinutes();
+                            const ampm = hrs >= 12 ? 'PM' : 'AM';
+                            hrs = hrs % 12 || 12;
+                            const minStr = mins < 10 ? '0' + mins : mins;
+                            deadlineStr = `${hrs}:${minStr} ${ampm}`;
+                        }
+
                         activeContainer.appendChild(this.buildTaskCardElement(t, false, deadlineStr));
                         activeCounter++;
                     } else {
@@ -2011,24 +2309,21 @@
                 container.innerHTML = "";
 
                 const targetDateTasks = State.tasks.filter(t => t.date === State.selectedDate);
-                const activeTimelineTasks = targetDateTasks.filter(t => !t.completed);
-                activeTimelineTasks.sort((a,b) => a.order - b.order);
+                const chunks = ScheduleEngine.getChunksForDate(State.selectedDate);
 
-                if (activeTimelineTasks.length === 0) {
+                if (chunks.length === 0) {
                     container.innerHTML = "<div style='text-align:center; color:var(--text-muted); padding: 40px 20px;'>No uncompleted tasks scheduled for this day.</div>";
                     document.getElementById("timeline-ends-at-display").innerText = "";
                     this.syncTimelineProgressBar(0, 0);
                     return;
                 }
 
-                let baseDate = Utils.getCalculatedBaseDate();
-                let currentStartTime = baseDate.getTime();
                 let finalEndTimeObj = null;
 
-                activeTimelineTasks.forEach(task => {
-                    const durationMs = ((task.hours * 60) + task.minutes) * 60000;
-                    const startTimeObj = new Date(currentStartTime);
-                    const endTimeObj = new Date(currentStartTime + durationMs);
+                chunks.forEach(chunk => {
+                    const task = chunk.task;
+                    const startTimeObj = chunk.start;
+                    const endTimeObj = chunk.end;
                     finalEndTimeObj = endTimeObj;
                     
                     const formatTime = (d) => {
@@ -2044,22 +2339,28 @@
                     item.className = "timeline-item";
                     
                     let customStyle = State.customStyles[task.id] || { color: "", emoji: "" };
-                    const contentClass = task.isBreak ? "timeline-content break-timeline" : "timeline-content";
+                    
+                    let contentClass = "timeline-content";
+                    if(task.isBreak) contentClass += " break-timeline";
+                    if(task.isFixed) contentClass += " fixed-timeline";
                     
                     let dynamicLeftBorder = "";
-                    if (!task.isBreak && customStyle.color) {
+                    if (!task.isBreak && !task.isFixed && customStyle.color) {
                         dynamicLeftBorder = `border-left-color: ${customStyle.color};`;
                     }
                     
                     let displayTitle = (customStyle.emoji ? customStyle.emoji + " " : "") + task.text;
+                    if (chunk.isChunk) displayTitle += " <span style='font-size:10px; opacity:0.6;'>(Split)</span>";
                     
+                    const durationMins = Math.floor((endTimeObj - startTimeObj) / 60000);
+
                     item.innerHTML = `
                         <div class="timeline-time">
                             <div>${formatTime(startTimeObj)}</div>
                         </div>
                         <div class="${contentClass}" style="${dynamicLeftBorder}">
                             <div class="timeline-title">${displayTitle}</div>
-                            <div class="timeline-duration">${Utils.formatHoursMins((task.hours * 60) + task.minutes)} • Ends at ${formatTime(endTimeObj)}</div>
+                            <div class="timeline-duration">${Utils.formatHoursMins(durationMins)} • Ends at ${formatTime(endTimeObj)}</div>
                         </div>
                     `;
 
@@ -2077,7 +2378,6 @@
                     item.addEventListener("mouseleave", clearPress);
 
                     container.appendChild(item);
-                    currentStartTime += durationMs;
                 });
 
                 if (finalEndTimeObj) {
@@ -2243,6 +2543,10 @@
             document.getElementById("next-day-btn").onclick = () => Actions.changeDateDelta(1);
 
             document.getElementById("fab-add-task").onclick = () => Actions.openTaskModal();
+            document.getElementById("open-bulk-add-btn").onclick = () => {
+                document.getElementById('bulk-add-modal').classList.add('active');
+            };
+
             document.getElementById("form-cancel-btn").onclick = () => Actions.closeTaskModal();
             document.getElementById("task-mutation-form").onsubmit = (e) => Actions.submitTaskForm(e);
 
@@ -2275,11 +2579,15 @@
             });
 
             document.getElementById("open-timeline-btn").onclick = () => {
-                RenderEngine.renderTimelineEngine();
                 document.getElementById("timeline-screen").classList.add("active");
+                State.lastView = 'timeline';
+                State.save();
+                RenderEngine.renderTimelineEngine();
             };
             document.getElementById("close-timeline-btn").onclick = () => {
                 document.getElementById("timeline-screen").classList.remove("active");
+                State.lastView = 'main';
+                State.save();
             };
 
             document.getElementById("open-calendar-btn").onclick = () => {
@@ -2460,12 +2768,18 @@
             Actions.switchTheme(State.theme);
             setupDOMEventListeners();
             SwipeEngine.init();
+            
+            if (State.lastView === 'timeline') {
+                document.getElementById("timeline-screen").classList.add("active");
+            }
+            
             RenderEngine.fullRender();
             
             setTimeout(() => {
                 Actions.checkMigrationRoutine();
             }, 400);
         });
+        
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
