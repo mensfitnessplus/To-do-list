@@ -1076,7 +1076,7 @@
     <div id="bulk-action-bar" class="bulk-action-bar">
         <span id="bulk-select-count" style="font-weight:700; font-size:14px; color:var(--text);">0 selected</span>
         <button class="btn btn-primary" style="padding:8px 12px; font-size:12px;" onclick="Actions.bulkAction('complete')">Complete</button>
-        <button class="btn btn-text" style="padding:8px 12px; font-size:12px; background:var(--border);" onclick="Actions.bulkAction('incomplete')">Undo</button>
+        <button class="btn btn-text" style="padding:8px 12px; font-size:16px; background:var(--border);" onclick="Actions.bulkAction('tomorrow')" title="Transfer to Tomorrow">→</button>
         <button class="btn btn-danger" style="padding:8px 12px; font-size:12px;" onclick="Actions.bulkAction('delete')">Delete</button>
         <button class="btn btn-text" style="padding:8px 12px; font-size:12px;" onclick="Actions.clearBulkSelect()">Cancel</button>
     </div>
@@ -1886,6 +1886,14 @@
                     State.tasks.forEach(t => { if(ids.includes(t.id)) t.completed = true; });
                 } else if (action === 'incomplete') {
                     State.tasks.forEach(t => { if(ids.includes(t.id)) t.completed = false; });
+                } else if (action === 'tomorrow') {
+                    const parts = State.selectedDate.split("-");
+                    const current = new Date(parts[0], parts[1] - 1, parts[2]);
+                    current.setDate(current.getDate() + 1);
+                    const tomorrowStr = Utils.formatDateIso(current);
+                    const tomorrowTasks = State.tasks.filter(t => t.date === tomorrowStr);
+                    let orderIndex = tomorrowTasks.length;
+                    State.tasks.forEach(t => { if(ids.includes(t.id)) { t.date = tomorrowStr; t.order = orderIndex++; } });
                 }
 
                 window.BulkState.selectedIds.clear();
@@ -1972,16 +1980,25 @@
             },
 
             copyDayTasks() {
-                const dayTasks = State.tasks
-                    .filter(t => t.date === State.selectedDate)
-                    .sort((a, b) => a.order - b.order);
+                const selectedIds = window.BulkState.selectedIds;
+                let tasksToCopy;
 
-                if (dayTasks.length === 0) {
-                    alert("No tasks found for this day.");
+                if (selectedIds.size > 0) {
+                    tasksToCopy = State.tasks
+                        .filter(t => selectedIds.has(t.id))
+                        .sort((a, b) => a.order - b.order);
+                } else {
+                    tasksToCopy = State.tasks
+                        .filter(t => t.date === State.selectedDate && !t.completed)
+                        .sort((a, b) => a.order - b.order);
+                }
+
+                if (tasksToCopy.length === 0) {
+                    alert("No tasks to copy.");
                     return;
                 }
 
-                const lines = dayTasks.map(t => {
+                const lines = tasksToCopy.map(t => {
                     let line = "";
                     if (t.isBreak) line += "/";
                     line += t.text;
