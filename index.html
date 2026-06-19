@@ -294,6 +294,68 @@
             transition: width 0.4s ease;
         }
 
+        .countdown-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            margin: -4px 16px 24px 16px;
+            box-shadow: var(--shadow);
+        }
+
+        .countdown-display {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text);
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        .countdown-display .countdown-amount {
+            color: var(--accent-dark);
+        }
+
+        .countdown-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .countdown-controls span {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .countdown-time-input {
+            background: var(--accent-light);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 8px 10px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+            font-family: var(--font);
+        }
+
+        .countdown-reset-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            border-radius: var(--radius-sm);
+            padding: 7px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .countdown-reset-btn:active {
+            background: var(--accent-light);
+        }
+
         .quick-add-container {
             margin-bottom: 24px;
             display: flex;
@@ -1211,6 +1273,14 @@
                 <div class="progress-fill" id="timeline-progress-bar-fill"></div>
             </div>
         </div>
+        <div class="countdown-card" style="margin: -4px 16px 24px 16px;">
+            <div class="countdown-display" id="countdown-display-text">-- until --</div>
+            <div class="countdown-controls">
+                <span>until</span>
+                <input type="time" class="countdown-time-input" id="countdown-target-time-input">
+                <button class="countdown-reset-btn" id="countdown-reset-btn">Reset</button>
+            </div>
+        </div>
     </div>
 
     <div class="screen-overlay" id="calendar-screen">
@@ -1309,6 +1379,7 @@
             dashboardCollapsed: false, 
             customStyles: {}, 
             lastView: "main",
+            countdownTargetTime: null, 
             
             save() {
                 localStorage.setItem("todo_app_tasks", JSON.stringify(this.tasks));
@@ -1319,6 +1390,7 @@
                 localStorage.setItem("todo_app_dashboardCollapsed", this.dashboardCollapsed);
                 localStorage.setItem("todo_app_customStyles", JSON.stringify(this.customStyles));
                 localStorage.setItem("todo_app_lastView", this.lastView);
+                localStorage.setItem("todo_app_countdownTargetTime", this.countdownTargetTime || "");
             },
             
             load() {
@@ -1348,6 +1420,9 @@
 
                 const cachedLastView = localStorage.getItem("todo_app_lastView");
                 if(cachedLastView) this.lastView = cachedLastView;
+
+                const cachedCountdownTime = localStorage.getItem("todo_app_countdownTargetTime");
+                this.countdownTargetTime = cachedCountdownTime ? cachedCountdownTime : null;
 
                 const parts = this.selectedDate.split("-");
                 this.calendarYear = parseInt(parts[0], 10);
@@ -2486,6 +2561,104 @@
             }
         };
 
+        const CountdownEngine = {
+            intervalId: null,
+
+            getDefaultTargetTime() {
+                return "00:00"; // 12:00 AM, treated as the next day
+            },
+
+            getTargetTimeString() {
+                return State.countdownTargetTime || this.getDefaultTargetTime();
+            },
+
+            // Resolves the next occurrence of the target HH:MM as a Date object.
+            // The default (00:00) is always interpreted as "next day midnight".
+            // A custom time is interpreted as the next upcoming occurrence of that time
+            // (today if it hasn't passed yet, otherwise tomorrow).
+            getTargetDateObj() {
+                const timeStr = this.getTargetTimeString();
+                const [h, m] = timeStr.split(":").map(Number);
+                const isDefault = !State.countdownTargetTime;
+
+                const now = new Date();
+                const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0, 0);
+
+                if (isDefault) {
+                    // Default always means "midnight of the next day"
+                    target.setDate(target.getDate() + 1);
+                } else if (target <= now) {
+                    // Custom time already passed today, roll to tomorrow
+                    target.setDate(target.getDate() + 1);
+                }
+
+                return target;
+            },
+
+            formatTargetLabel() {
+                const timeStr = this.getTargetTimeString();
+                let [h, m] = timeStr.split(":").map(Number);
+                const ampm = h >= 12 ? 'PM' : 'AM';
+                h = h % 12 || 12;
+                const mStr = m < 10 ? '0' + m : m;
+                return `${h}:${mStr} ${ampm}`;
+            },
+
+            init() {
+                const input = document.getElementById("countdown-target-time-input");
+                const resetBtn = document.getElementById("countdown-reset-btn");
+
+                input.value = this.getTargetTimeString();
+
+                input.onchange = () => {
+                    if (input.value) {
+                        State.countdownTargetTime = input.value;
+                    } else {
+                        State.countdownTargetTime = null;
+                        input.value = this.getDefaultTargetTime();
+                    }
+                    State.save();
+                    this.refresh();
+                };
+
+                resetBtn.onclick = () => {
+                    State.countdownTargetTime = null;
+                    State.save();
+                    input.value = this.getDefaultTargetTime();
+                    this.refresh();
+                };
+
+                this.refresh();
+                this.startTicking();
+            },
+
+            refresh() {
+                const display = document.getElementById("countdown-display-text");
+                if (!display) return;
+
+                const target = this.getTargetDateObj();
+                const now = new Date();
+                let diffMs = target - now;
+                if (diffMs < 0) diffMs = 0;
+
+                const totalMins = Math.floor(diffMs / 60000);
+                const hrs = Math.floor(totalMins / 60);
+                const mins = totalMins % 60;
+
+                const label = this.formatTargetLabel();
+                display.innerHTML = `<span class="countdown-amount">${hrs}h ${mins}m</span> until ${label}`;
+            },
+
+            startTicking() {
+                if (this.intervalId) clearInterval(this.intervalId);
+                this.intervalId = setInterval(() => {
+                    if (document.getElementById("timeline-screen").classList.contains("active")) {
+                        this.refresh();
+                    }
+                }, 1000 * 30);
+            }
+        };
+
         const DragDropEngine = {
             activeDragElement: null,
 
@@ -2651,6 +2824,7 @@
                 State.lastView = 'timeline';
                 State.save();
                 RenderEngine.renderTimelineEngine();
+                CountdownEngine.refresh();
             };
             document.getElementById("close-timeline-btn").onclick = () => {
                 document.getElementById("timeline-screen").classList.remove("active");
@@ -2848,6 +3022,7 @@
             Actions.switchTheme(State.theme);
             setupDOMEventListeners();
             SwipeEngine.init();
+            CountdownEngine.init();
             
             if (State.lastView === 'timeline') {
                 document.getElementById("timeline-screen").classList.add("active");
