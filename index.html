@@ -1026,6 +1026,80 @@
             width: 20px; height: 20px; cursor: pointer; accent-color: var(--accent);
             margin-right: 8px; flex-shrink: 0; border-radius: 4px;
         }
+
+        .progress-slider-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .progress-slider-row input[type="range"] {
+            flex-grow: 1;
+            accent-color: var(--accent);
+            height: 6px;
+        }
+
+        .progress-slider-value {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent-dark);
+            min-width: 42px;
+            text-align: right;
+        }
+
+        .partial-progress-tag {
+            color: var(--accent-dark);
+            font-weight: 700;
+            font-size: 11px;
+            margin-right: 4px;
+        }
+
+        .subtask-toggle {
+            cursor: pointer;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+            transition: transform 0.2s;
+        }
+
+        .subtask-toggle.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .subtask-toggle svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        .subtask-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-left: 28px;
+            margin-top: -2px;
+            padding-left: 12px;
+            border-left: 2px solid var(--border);
+        }
+
+        .subtask-list.collapsed {
+            display: none;
+        }
+
+        .subtask-list .task-card {
+            padding: 10px 12px;
+        }
+
+        .subtask-count-tag {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-left: 4px;
+        }
     </style>
 </head>
 <body>
@@ -1114,7 +1188,10 @@
 
         <div id="overdue-section-wrapper" style="display: none;">
             <div class="section-title">
-                <span>Overdue Tasks (<span id="overdue-count">0</span>)</span>
+                <div class="collapsible-trigger" id="overdue-trigger">
+                    <svg viewBox="0 0 24 24"><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>
+                    <span>Overdue Tasks (<span id="overdue-count">0</span>)</span>
+                </div>
             </div>
             <div class="task-list" id="overdue-tasks-container"></div>
         </div>
@@ -1197,6 +1274,14 @@
                     </div>
                 </div>
 
+                <div class="form-group" id="completion-slider-wrap">
+                    <label for="form-task-completion">Work Completed So Far</label>
+                    <div class="progress-slider-row">
+                        <input type="range" id="form-task-completion" min="0" max="100" step="5" value="0" oninput="document.getElementById('form-task-completion-value').innerText = this.value + '%'">
+                        <span class="progress-slider-value" id="form-task-completion-value">0%</span>
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label for="form-task-date">Scheduled Date</label>
                     <input type="date" id="form-task-date" class="form-input" required>
@@ -1213,8 +1298,8 @@
         <div class="modal-card">
             <div class="modal-title">Bulk Add Tasks</div>
             <div class="form-group">
-                <label>Enter Multiple Tasks (One per line)</label>
-                <textarea id="bulk-add-textarea" class="form-input" rows="8" placeholder="Cost 2h&#10;Audit 3h"></textarea>
+                <label>Enter Multiple Tasks (One per line). Start a line with "-" to nest it as a subtask of the task above, or "-/" for a subtask break.</label>
+                <textarea id="bulk-add-textarea" class="form-input" rows="8" placeholder="Cost 2h&#10;- sub task 20m&#10;- sub task 2 30m&#10;Audit 3h"></textarea>
             </div>
             <div class="modal-actions">
                 <button type="button" class="btn btn-text" onclick="document.getElementById('bulk-add-modal').classList.remove('active')">Cancel</button>
@@ -1380,6 +1465,8 @@
             customStyles: {}, 
             lastView: "main",
             countdownTargetTime: null, 
+            overdueCollapsed: false,
+            collapsedSubtaskGroups: {},
             
             save() {
                 localStorage.setItem("todo_app_tasks", JSON.stringify(this.tasks));
@@ -1391,6 +1478,8 @@
                 localStorage.setItem("todo_app_customStyles", JSON.stringify(this.customStyles));
                 localStorage.setItem("todo_app_lastView", this.lastView);
                 localStorage.setItem("todo_app_countdownTargetTime", this.countdownTargetTime || "");
+                localStorage.setItem("todo_app_overdueCollapsed", this.overdueCollapsed);
+                localStorage.setItem("todo_app_collapsedSubtaskGroups", JSON.stringify(this.collapsedSubtaskGroups));
             },
             
             load() {
@@ -1423,6 +1512,11 @@
 
                 const cachedCountdownTime = localStorage.getItem("todo_app_countdownTargetTime");
                 this.countdownTargetTime = cachedCountdownTime ? cachedCountdownTime : null;
+
+                this.overdueCollapsed = localStorage.getItem("todo_app_overdueCollapsed") === "true";
+
+                const cachedCollapsedSubtaskGroups = localStorage.getItem("todo_app_collapsedSubtaskGroups");
+                if(cachedCollapsedSubtaskGroups) this.collapsedSubtaskGroups = JSON.parse(cachedCollapsedSubtaskGroups);
 
                 const parts = this.selectedDate.split("-");
                 this.calendarYear = parseInt(parts[0], 10);
@@ -1520,14 +1614,42 @@
                     }
                 }
                 return baseDate;
+            },
+
+            // Returns the list of direct subtasks of a given task id.
+            getSubtasks(taskId) {
+                return State.tasks.filter(t => t.parentId === taskId);
+            },
+
+            // A task's "own" total minutes: if it has subtasks, this is the sum of
+            // the subtasks' total minutes (recursively); otherwise its own hours/minutes.
+            getTaskTotalMins(task) {
+                const subtasks = this.getSubtasks(task.id);
+                if (subtasks.length > 0) {
+                    return subtasks.reduce((sum, st) => sum + this.getTaskTotalMins(st), 0);
+                }
+                return (task.hours || 0) * 60 + (task.minutes || 0);
+            },
+
+            // Remaining minutes of work for a task, accounting for partial completion
+            // (completionPercent) and, when present, the remaining time of its subtasks.
+            getTaskRemainingMins(task) {
+                if (task.completed) return 0;
+                const subtasks = this.getSubtasks(task.id);
+                if (subtasks.length > 0) {
+                    return subtasks.reduce((sum, st) => sum + this.getTaskRemainingMins(st), 0);
+                }
+                const totalMins = (task.hours || 0) * 60 + (task.minutes || 0);
+                const pct = Math.min(100, Math.max(0, task.completionPercent || 0));
+                return Math.round(totalMins * (1 - pct / 100));
             }
         };
 
         const ScheduleEngine = {
             getChunksForDate(dateStr) {
                 const targetDateTasks = State.tasks.filter(t => t.date === dateStr);
-                const activeFlex = targetDateTasks.filter(t => !t.completed && !t.isFixed);
-                const allFixed = targetDateTasks.filter(t => t.isFixed);
+                const activeFlex = targetDateTasks.filter(t => !t.completed && !t.isFixed && !t.parentId);
+                const allFixed = targetDateTasks.filter(t => t.isFixed && !t.parentId);
 
                 const fixedIntervals = allFixed.map(t => {
                     const startMs = new Date(`${dateStr}T${t.fixedStart}:00`).getTime();
@@ -1558,7 +1680,7 @@
                 let chunks = [];
 
                 activeFlex.sort((a,b) => a.order - b.order).forEach(t => {
-                    let remMs = ((t.hours || 0) * 60 + (t.minutes || 0)) * 60000;
+                    let remMs = Utils.getTaskRemainingMins(t) * 60000;
                     
                     while (remMs > 0) {
                         let insideFixed = mergedFixed.find(f => currentMs >= f.startMs && currentMs < f.endMs);
@@ -1662,6 +1784,9 @@
                         document.getElementById("form-task-date").value = task.date;
                         document.getElementById("form-task-is-break").checked = !!task.isBreak;
                         document.getElementById("form-task-is-fixed").checked = !!task.isFixed;
+                        const completionVal = task.completionPercent || 0;
+                        document.getElementById("form-task-completion").value = completionVal;
+                        document.getElementById("form-task-completion-value").innerText = completionVal + "%";
                         if(task.isFixed) {
                             document.getElementById("form-task-fixed-start").value = task.fixedStart || "";
                             document.getElementById("form-task-fixed-end").value = task.fixedEnd || "";
@@ -1671,9 +1796,14 @@
                     document.getElementById("modal-form-title").innerText = "Create Task";
                     document.getElementById("form-task-id").value = "";
                     document.getElementById("form-task-date").value = State.selectedDate;
+                    document.getElementById("form-task-completion").value = 0;
+                    document.getElementById("form-task-completion-value").innerText = "0%";
                 }
-                
-                document.getElementById('duration-inputs-wrap').style.display = document.getElementById("form-task-is-fixed").checked ? 'none' : 'block';
+
+                const editingTask = taskId ? State.tasks.find(t => t.id === taskId) : null;
+                const hasSubtasks = editingTask && State.tasks.some(t => t.parentId === editingTask.id);
+                document.getElementById("completion-slider-wrap").style.display = hasSubtasks ? "none" : "block";
+                document.getElementById('duration-inputs-wrap').style.display = (document.getElementById("form-task-is-fixed").checked || hasSubtasks) ? 'none' : 'block';
                 document.getElementById('fixed-time-inputs-wrap').style.display = document.getElementById("form-task-is-fixed").checked ? 'block' : 'none';
 
                 overlay.classList.add("active");
@@ -1734,6 +1864,7 @@
                 const isFixed = document.getElementById("form-task-is-fixed").checked;
                 const fixedStart = document.getElementById("form-task-fixed-start").value;
                 const fixedEnd = document.getElementById("form-task-fixed-end").value;
+                const completionPercent = Math.min(100, Math.max(0, parseInt(document.getElementById("form-task-completion").value, 10) || 0));
 
                 if(!text) return;
                 
@@ -1753,6 +1884,7 @@
                 if(id) {
                     const task = State.tasks.find(t => t.id === id);
                     if(task) {
+                        const hasSubtasks = State.tasks.some(t => t.parentId === task.id);
                         task.text = text;
                         task.hours = hours;
                         task.minutes = minutes;
@@ -1761,6 +1893,9 @@
                         task.isFixed = isFixed;
                         task.fixedStart = fixedStart;
                         task.fixedEnd = fixedEnd;
+                        task.completionPercent = hasSubtasks ? 0 : completionPercent;
+                        if (completionPercent >= 100 && !hasSubtasks) task.completed = true;
+                        if (task.parentId) Actions.syncParentCompletionState(task.parentId);
                     }
                 } else {
                     const targetDateTasks = State.tasks.filter(t => t.date === date);
@@ -1771,11 +1906,12 @@
                         date: date,
                         hours: hours,
                         minutes: minutes,
-                        completed: false,
+                        completed: completionPercent >= 100,
                         isBreak: isBreak,
                         isFixed: isFixed,
                         fixedStart: fixedStart,
                         fixedEnd: fixedEnd,
+                        completionPercent: completionPercent,
                         createdAt: Date.now(),
                         order: orderIndex
                     };
@@ -1795,18 +1931,45 @@
                 let orderIndex = targetTasks.length;
 
                 let addedCount = 0;
+                let lastMainTask = null;
+                const touchedParentIds = new Set();
+
                 lines.forEach(line => {
                     let rawVal = line.trim();
-                    if(rawVal) {
-                        let isBreak = false;
-                        if (rawVal.startsWith('/') || rawVal.startsWith('\\')) {
-                            isBreak = true;
-                            rawVal = rawVal.substring(1).trim();
-                        }
+                    if(!rawVal) return;
 
-                        const parsed = Utils.parseQuickAdd(rawVal);
-                        
-                        State.tasks.push({
+                    const isSubtaskLine = rawVal.startsWith('-');
+                    if (isSubtaskLine) {
+                        rawVal = rawVal.substring(1).trim();
+                    }
+
+                    let isBreak = false;
+                    if (rawVal.startsWith('/') || rawVal.startsWith('\\')) {
+                        isBreak = true;
+                        rawVal = rawVal.substring(1).trim();
+                    }
+
+                    const parsed = Utils.parseQuickAdd(rawVal);
+
+                    if (isSubtaskLine && lastMainTask) {
+                        const subtaskTasks = State.tasks.filter(t => t.parentId === lastMainTask.id);
+                        const subtask = {
+                            id: Utils.generateUUID(),
+                            text: parsed.text,
+                            date: State.selectedDate,
+                            hours: parsed.hours,
+                            minutes: parsed.minutes,
+                            completed: false,
+                            isBreak: isBreak,
+                            parentId: lastMainTask.id,
+                            createdAt: Date.now(),
+                            order: subtaskTasks.length
+                        };
+                        State.tasks.push(subtask);
+                        touchedParentIds.add(lastMainTask.id);
+                        addedCount++;
+                    } else {
+                        const newTask = {
                             id: Utils.generateUUID(),
                             text: parsed.text,
                             date: State.selectedDate,
@@ -1816,8 +1979,19 @@
                             isBreak: isBreak,
                             createdAt: Date.now(),
                             order: orderIndex++
-                        });
+                        };
+                        State.tasks.push(newTask);
+                        lastMainTask = newTask;
                         addedCount++;
+                    }
+                });
+
+                touchedParentIds.forEach(parentId => {
+                    const parent = State.tasks.find(t => t.id === parentId);
+                    if (parent) {
+                        const totalMins = Utils.getTaskTotalMins(parent);
+                        parent.hours = Math.floor(totalMins / 60);
+                        parent.minutes = totalMins % 60;
                     }
                 });
 
@@ -1833,8 +2007,41 @@
                 const task = State.tasks.find(t => t.id === taskId);
                 if(task) {
                     task.completed = !task.completed;
+                    if (task.completed) task.completionPercent = 100;
+
+                    const subtasks = State.tasks.filter(t => t.parentId === task.id);
+                    if (subtasks.length > 0) {
+                        subtasks.forEach(st => {
+                            st.completed = task.completed;
+                            if (st.completed) st.completionPercent = 100;
+                        });
+                    }
+
+                    if (task.parentId) {
+                        Actions.syncParentCompletionState(task.parentId);
+                    }
+
                     State.save();
                     RenderEngine.fullRender();
+                }
+            },
+
+            // Recomputes a parent task's completed/completionPercent flags based on
+            // the aggregate state of its subtasks.
+            syncParentCompletionState(parentId) {
+                const parent = State.tasks.find(t => t.id === parentId);
+                if(!parent) return;
+                const subtasks = State.tasks.filter(t => t.parentId === parentId);
+                if(subtasks.length === 0) return;
+
+                const allDone = subtasks.every(st => st.completed);
+                parent.completed = allDone;
+                if (allDone) {
+                    parent.completionPercent = 100;
+                } else {
+                    const totalMins = Utils.getTaskTotalMins(parent);
+                    const remainingMins = subtasks.reduce((sum, st) => sum + Utils.getTaskRemainingMins(st), 0);
+                    parent.completionPercent = totalMins > 0 ? Math.round(((totalMins - remainingMins) / totalMins) * 100) : 0;
                 }
             },
 
@@ -1852,7 +2059,7 @@
                 const source = State.tasks.find(t => t.id === taskId);
                 if(!source) return;
 
-                const activeDayTasks = State.tasks.filter(t => t.date === source.date);
+                const activeDayTasks = State.tasks.filter(t => t.date === source.date && !t.parentId);
                 activeDayTasks.sort((a,b) => a.order - b.order);
 
                 const sourceIndex = activeDayTasks.findIndex(t => t.id === taskId);
@@ -1862,10 +2069,23 @@
                     id: Utils.generateUUID(),
                     text: `${source.text} (Copy)`,
                     createdAt: Date.now(),
-                    completed: false
+                    completed: false,
+                    completionPercent: 0
                 };
 
                 State.tasks.push(clone);
+
+                const sourceSubtasks = State.tasks.filter(t => t.parentId === source.id);
+                sourceSubtasks.forEach(st => {
+                    State.tasks.push({
+                        ...st,
+                        id: Utils.generateUUID(),
+                        parentId: clone.id,
+                        createdAt: Date.now(),
+                        completed: false,
+                        completionPercent: 0
+                    });
+                });
                 
                 let indexCounter = 0;
                 activeDayTasks.forEach((t, idx) => {
@@ -1881,9 +2101,14 @@
 
             deleteTask(taskId) {
                 if(confirm("Are you sure you want to permanently delete this task?")) {
-                    State.tasks = State.tasks.filter(t => t.id !== taskId);
-                    if(State.customStyles[taskId]) delete State.customStyles[taskId];
-                    window.BulkState.selectedIds.delete(taskId);
+                    const subtaskIds = State.tasks.filter(t => t.parentId === taskId).map(t => t.id);
+                    const allIdsToDelete = [taskId, ...subtaskIds];
+
+                    State.tasks = State.tasks.filter(t => !allIdsToDelete.includes(t.id));
+                    allIdsToDelete.forEach(id => {
+                        if(State.customStyles[id]) delete State.customStyles[id];
+                        window.BulkState.selectedIds.delete(id);
+                    });
                     State.save();
                     RenderEngine.fullRender();
                 }
@@ -2064,7 +2289,7 @@
                         .sort((a, b) => a.order - b.order);
                 } else {
                     tasksToCopy = State.tasks
-                        .filter(t => t.date === State.selectedDate && !t.completed)
+                        .filter(t => t.date === State.selectedDate && !t.completed && !t.parentId)
                         .sort((a, b) => a.order - b.order);
                 }
 
@@ -2073,8 +2298,8 @@
                     return;
                 }
 
-                const lines = tasksToCopy.map(t => {
-                    let line = "";
+                const formatTaskLine = (t, isSubtask) => {
+                    let line = isSubtask ? "- " : "";
                     if (t.isBreak) line += "/";
                     line += t.text;
                     const totalMins = (t.hours || 0) * 60 + (t.minutes || 0);
@@ -2086,6 +2311,16 @@
                         else line += ` ${m}m`;
                     }
                     return line;
+                };
+
+                const lines = [];
+                tasksToCopy.forEach(t => {
+                    lines.push(formatTaskLine(t, false));
+                    if (!selectedIds.has(t.id) || selectedIds.size === 0) {
+                        const subtasks = State.tasks.filter(st => st.parentId === t.id && !st.completed)
+                            .sort((a,b) => a.order - b.order);
+                        subtasks.forEach(st => lines.push(formatTaskLine(st, true)));
+                    }
                 });
 
                 const textToCopy = lines.join("\n");
@@ -2134,16 +2369,16 @@
             },
 
             renderDashboardMetrics() {
-                const targetDateTasks = State.tasks.filter(t => t.date === State.selectedDate);
+                const targetDateTasks = State.tasks.filter(t => t.date === State.selectedDate && !t.parentId);
                 
                 let scheduledMins = 0;
                 let completedMins = 0;
 
                 targetDateTasks.sort((a, b) => a.order - b.order).forEach(t => {
-                    const durationMins = (t.hours * 60) + t.minutes;
+                    const durationMins = Utils.getTaskTotalMins(t);
                     if (!t.isBreak) {
                         scheduledMins += durationMins;
-                        if(t.completed) completedMins += durationMins;
+                        completedMins += durationMins - Utils.getTaskRemainingMins(t);
                     }
                 });
 
@@ -2240,13 +2475,16 @@
                 }
             },
 
-            buildTaskCardElement(task, isOverdueContext = false, deadlineStr = "") {
+            buildTaskCardElement(task, isOverdueContext = false, deadlineStr = "", isSubtaskContext = false) {
                 const card = document.createElement("div");
                 card.className = `task-card ${task.completed ? 'completed-task' : ''} ${task.isBreak ? 'break-task' : ''} ${task.isFixed ? 'fixed-task' : ''}`;
                 card.id = task.id;
                 card.setAttribute("data-order", task.order);
 
-                const totalMins = (task.hours * 60) + task.minutes;
+                const subtasks = State.tasks.filter(t => t.parentId === task.id);
+                const hasSubtasks = subtasks.length > 0;
+
+                const totalMins = Utils.getTaskTotalMins(task);
                 let durationLabel = Utils.formatHoursMins(totalMins);
                 
                 const formatTime12 = (time24) => {
@@ -2268,9 +2506,20 @@
 
                 const isSelected = window.BulkState.selectedIds.has(task.id);
 
+                const partialPct = task.completionPercent || 0;
+                const partialTagHtml = (!task.completed && partialPct > 0) ? `<span class="partial-progress-tag">${partialPct}% done</span>` : "";
+                const subtaskCountHtml = hasSubtasks ? `<span class="subtask-count-tag">${subtasks.filter(s=>s.completed).length}/${subtasks.length} subtasks</span>` : "";
+
+                const subtaskToggleHtml = hasSubtasks ? `
+                    <div class="subtask-toggle" id="subtask-toggle-${task.id}" title="Toggle subtasks">
+                        <svg viewBox="0 0 24 24"><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>
+                    </div>` : '';
+
+                const showDragHandle = !task.completed && !isOverdueContext && !isSubtaskContext;
+
                 card.innerHTML = `
                     <input type="checkbox" class="bulk-checkbox" onchange="Actions.toggleBulkSelect('${task.id}')" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation()">
-                    ${(!task.completed && !isOverdueContext) ? `
+                    ${showDragHandle ? `
                     <div class="drag-handle" title="Drag to reorder">
                         <svg viewBox="0 0 24 24"><path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
                     </div>` : ''}
@@ -2282,9 +2531,11 @@
                         <div class="task-title">${displayTitle}</div>
                         <div class="task-duration">
                             ${isOverdueContext ? `<span class="overdue-tag">${Utils.getFriendlyDateLabel(task.date)}</span>` : ''}
-                            ${durationLabel}${deadlineHtml}
+                            ${partialTagHtml}
+                            ${durationLabel}${deadlineHtml}${subtaskCountHtml}
                         </div>
                     </div>
+                    ${subtaskToggleHtml}
                     <div class="task-actions-wrapper">
                         <button class="task-action-btn" onclick="Actions.openTaskModal('${task.id}')" title="Edit Task">
                             <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
@@ -2294,12 +2545,13 @@
                         </button>
                     </div>
                     <div class="menu-dropdown" id="dropdown-${task.id}">
+                        <button class="menu-item" onclick="Actions.openTaskModal('${task.id}')">Add/Edit Subtasks via Edit</button>
                         <button class="menu-item" onclick="Actions.duplicateTask('${task.id}')">Duplicate</button>
                         <button class="menu-item delete-item" onclick="Actions.deleteTask('${task.id}')">Delete</button>
                     </div>
                 `;
 
-                if(!task.completed && !isOverdueContext) {
+                if(showDragHandle) {
                     card.addEventListener("dragstart", DragDropEngine.handleDragStart);
                     card.addEventListener("dragend", DragDropEngine.handleDragEnd);
                     
@@ -2314,7 +2566,41 @@
                     }
                 }
 
+                if (hasSubtasks) {
+                    const toggleEl = card.querySelector(`#subtask-toggle-${task.id}`);
+                    if (toggleEl) {
+                        toggleEl.onclick = (e) => {
+                            e.stopPropagation();
+                            const list = document.getElementById(`subtask-list-${task.id}`);
+                            if (list) {
+                                list.classList.toggle("collapsed");
+                                toggleEl.classList.toggle("collapsed");
+                                State.collapsedSubtaskGroups = State.collapsedSubtaskGroups || {};
+                                State.collapsedSubtaskGroups[task.id] = list.classList.contains("collapsed");
+                                State.save();
+                            }
+                        };
+                    }
+                }
+
                 return card;
+            },
+
+            // Builds the nested subtask list element that follows a parent task card.
+            buildSubtaskListElement(task, isOverdueContext = false) {
+                const subtasks = State.tasks.filter(t => t.parentId === task.id).sort((a,b) => a.order - b.order);
+                const wrap = document.createElement("div");
+                wrap.className = "subtask-list";
+                wrap.id = `subtask-list-${task.id}`;
+
+                const isCollapsed = State.collapsedSubtaskGroups && State.collapsedSubtaskGroups[task.id];
+                if (isCollapsed) wrap.classList.add("collapsed");
+
+                subtasks.forEach(st => {
+                    wrap.appendChild(this.buildTaskCardElement(st, isOverdueContext, "", true));
+                });
+
+                return wrap;
             },
 
             renderTaskListsEngine() {
@@ -2324,13 +2610,27 @@
                 const overdueContainer = document.getElementById("overdue-tasks-container");
                 overdueContainer.innerHTML = "";
 
-                const overdueTasks = State.tasks.filter(t => !t.completed && t.date < todayStr);
+                const overdueTasks = State.tasks.filter(t => !t.completed && t.date < todayStr && !t.parentId);
                 if(overdueTasks.length > 0) {
                     document.getElementById("overdue-count").innerText = overdueTasks.length;
                     overdueTasks.forEach(t => {
                         overdueContainer.appendChild(this.buildTaskCardElement(t, true));
+                        if (State.tasks.some(st => st.parentId === t.id)) {
+                            overdueContainer.appendChild(this.buildSubtaskListElement(t, true));
+                        }
                     });
                     overdueWrapper.style.display = "block";
+
+                    const overdueTrigger = document.getElementById("overdue-trigger");
+                    if (overdueTrigger) {
+                        if (State.overdueCollapsed) {
+                            overdueTrigger.classList.add("collapsed");
+                            overdueContainer.classList.add("collapsed");
+                        } else {
+                            overdueTrigger.classList.remove("collapsed");
+                            overdueContainer.classList.remove("collapsed");
+                        }
+                    }
                 } else {
                     overdueWrapper.style.display = "none";
                 }
@@ -2341,7 +2641,7 @@
                 activeContainer.innerHTML = "";
                 completedContainer.innerHTML = "";
 
-                const targetDateTasks = State.tasks.filter(t => t.date === State.selectedDate);
+                const targetDateTasks = State.tasks.filter(t => t.date === State.selectedDate && !t.parentId);
                 targetDateTasks.sort((a,b) => a.order - b.order);
 
                 const chunks = ScheduleEngine.getChunksForDate(State.selectedDate);
@@ -2352,6 +2652,7 @@
                 let completedCounter = 0;
 
                 targetDateTasks.forEach(t => {
+                    const hasSubtasks = State.tasks.some(st => st.parentId === t.id);
                     if(!t.completed) {
                         let deadlineStr = "";
                         const endObj = deadlineMap[t.id];
@@ -2365,9 +2666,11 @@
                         }
 
                         activeContainer.appendChild(this.buildTaskCardElement(t, false, deadlineStr));
+                        if (hasSubtasks) activeContainer.appendChild(this.buildSubtaskListElement(t, false));
                         activeCounter++;
                     } else {
                         completedContainer.appendChild(this.buildTaskCardElement(t, false));
+                        if (hasSubtasks) completedContainer.appendChild(this.buildSubtaskListElement(t, false));
                         completedCounter++;
                     }
                 });
@@ -2681,7 +2984,7 @@
             },
 
             getDragAfterElement(container, yCoordinate) {
-                const draggableElements = [...container.querySelectorAll('.task-card:not(.dragging)')];
+                const draggableElements = [...container.querySelectorAll(':scope > .task-card:not(.dragging)')];
                 
                 return draggableElements.reduce((closest, child) => {
                     const box = child.getBoundingClientRect();
@@ -2713,6 +3016,17 @@
                 } else {
                     container.insertBefore(DragDropEngine.activeDragElement, afterElement);
                 }
+                DragDropEngine.reattachSubtaskList(container, DragDropEngine.activeDragElement);
+            },
+
+            // Ensures a task card's nested subtask-list (if any) stays immediately
+            // after it when the card is moved during drag-and-drop reordering.
+            reattachSubtaskList(container, card) {
+                if (!card) return;
+                const subtaskList = document.getElementById(`subtask-list-${card.id}`);
+                if (subtaskList && subtaskList.previousElementSibling !== card) {
+                    container.insertBefore(subtaskList, card.nextSibling);
+                }
             },
 
             handleTouchEnd(e) {
@@ -2725,7 +3039,7 @@
 
             commitNewSortOrder() {
                 const container = document.getElementById("active-tasks-container");
-                const renderedCards = [...container.querySelectorAll(".task-card")];
+                const renderedCards = [...container.querySelectorAll(":scope > .task-card")];
                 
                 renderedCards.forEach((card, index) => {
                     const id = card.id;
@@ -2802,6 +3116,13 @@
                 document.getElementById("completed-tasks-container").classList.toggle("collapsed");
             };
 
+            document.getElementById("overdue-trigger").onclick = function() {
+                this.classList.toggle("collapsed");
+                document.getElementById("overdue-tasks-container").classList.toggle("collapsed");
+                State.overdueCollapsed = this.classList.contains("collapsed");
+                State.save();
+            };
+
             document.getElementById("migrate-move-btn").onclick = () => Actions.executeMigration("move");
             document.getElementById("migrate-keep-btn").onclick = () => Actions.executeMigration("keep");
             document.getElementById("migrate-complete-btn").onclick = () => Actions.executeMigration("complete");
@@ -2816,6 +3137,7 @@
                     } else {
                         activeContainer.insertBefore(DragDropEngine.activeDragElement, afterElement);
                     }
+                    DragDropEngine.reattachSubtaskList(activeContainer, DragDropEngine.activeDragElement);
                 }
             });
 
