@@ -805,13 +805,32 @@
             margin-right: 44px;
         }
 
-        .timeline-container { padding: 16px; display: flex; flex-direction: column; gap: 0; }
-        .timeline-item { display: flex; gap: 12px; margin-bottom: 12px; }
-        .timeline-time { width: 65px; font-size: 12px; font-weight: 700; color: var(--text-muted); text-align: right; flex-shrink: 0; padding-top: 4px; }
-        .timeline-content { flex-grow: 1; background: var(--card); border-left: 4px solid var(--accent); padding: 10px 12px; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; box-shadow: var(--shadow); position: relative; }
+        .timeline-container { padding: 16px; display: flex; flex-direction: column; gap: 0; --min-px-per-min: 1; }
+        .timeline-item { display: flex; gap: 12px; margin-bottom: 8px; align-items: stretch; }
+        .timeline-time { width: 65px; font-size: 12px; font-weight: 700; color: var(--text-muted); text-align: right; flex-shrink: 0; padding-top: 10px; }
+        .timeline-content {
+            flex-grow: 1;
+            background: var(--card);
+            border-left: 4px solid var(--accent);
+            padding: 8px 12px;
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+            box-shadow: var(--shadow);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            /* Height scales with task duration: --block-mins is set inline per item.
+               1 minute = --min-px-per-min px, clamped so very short tasks stay tappable
+               and very long ones don't dominate the screen. */
+            min-height: clamp(34px, calc(var(--block-mins, 30) * var(--min-px-per-min, 1.15) * 1px), 420px);
+        }
         .timeline-content.break-timeline { border-left-color: var(--text-muted); background: var(--bg); opacity: 0.8; border: 1px dashed var(--text-muted); border-left: 4px solid var(--text-muted); }
         .timeline-content.fixed-timeline { border-left-style: double; border-left-width: 6px; border-left-color: var(--accent-dark); }
-        
+        .timeline-content.timeline-compact .timeline-title { font-size: 12.5px; margin-bottom: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .timeline-content.timeline-compact .timeline-duration { display: none; }
+        .timeline-content.timeline-compact { flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; }
+        .timeline-content.timeline-compact .timeline-duration-inline { font-size: 10.5px; color: var(--text-muted); flex-shrink: 0; }
+
         .timeline-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
         .timeline-duration { font-size: 11px; color: var(--text-muted); }
 
@@ -2799,13 +2818,22 @@
                     
                     const durationMins = Math.floor((endTimeObj - startTimeObj) / 60000);
 
+                    // Below this duration, the full title+duration stack won't fit
+                    // comfortably inside the proportional height, so collapse to a
+                    // single compact row instead of letting text overflow the block.
+                    const isCompact = durationMins < 20;
+                    if (isCompact) contentClass += " timeline-compact";
+
                     item.innerHTML = `
                         <div class="timeline-time">
                             <div>${formatTime(startTimeObj)}</div>
                         </div>
-                        <div class="${contentClass}" style="${dynamicLeftBorder}">
+                        <div class="${contentClass}" style="${dynamicLeftBorder} --block-mins:${durationMins};">
                             <div class="timeline-title">${displayTitle}</div>
-                            <div class="timeline-duration">${Utils.formatHoursMins(durationMins)} • Ends at ${formatTime(endTimeObj)}</div>
+                            ${isCompact
+                                ? `<div class="timeline-duration-inline">${Utils.formatHoursMins(durationMins)}</div>`
+                                : `<div class="timeline-duration">${Utils.formatHoursMins(durationMins)} • Ends at ${formatTime(endTimeObj)}</div>`
+                            }
                         </div>
                     `;
 
