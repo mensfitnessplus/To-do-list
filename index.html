@@ -2026,13 +2026,13 @@
                 const task = State.tasks.find(t => t.id === taskId);
                 if(task) {
                     task.completed = !task.completed;
-                    if (task.completed) task.completionPercent = 100;
+                    task.completionPercent = task.completed ? 100 : 0;
 
                     const subtasks = State.tasks.filter(t => t.parentId === task.id);
                     if (subtasks.length > 0) {
                         subtasks.forEach(st => {
                             st.completed = task.completed;
-                            if (st.completed) st.completionPercent = 100;
+                            st.completionPercent = st.completed ? 100 : 0;
                         });
                     }
 
